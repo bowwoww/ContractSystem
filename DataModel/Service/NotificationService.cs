@@ -87,7 +87,8 @@ namespace DataModel.Service
                 // 查詢該合約下的最近課程日期
                 var query = _context.TrainingDates
                         .Where(t => contractIds.Contains(t.ContractID)
-                            && t.ClassDate <= DateTime.Now.AddDays(dayNotifity));
+                            && t.ClassDate <= DateTime.Now.AddDays(dayNotifity)
+                            && t.ClassDate > DateTime.Now);
                 if(member.MemberRole == "B")
                     query = query.Where(t => t.TrainerID == member.MemberID);
 

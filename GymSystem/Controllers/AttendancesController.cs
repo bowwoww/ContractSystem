@@ -41,7 +41,7 @@ namespace GymSystem.Controllers
                             .Include(a => a.Contract)
                                 .ThenInclude(c => c.TrainingClass)
                             .Include(a => a.Trainer)
-                            .Where(a => a.MemberID == id)
+                            .Where(a => a.MemberID == id || a.TrainerID == id)
                             .ToListAsync();
 
             // 取得所有合約(Contract)的課程名稱(TrainingClass.ClassName)和訓練日期(TrainingDates)
@@ -50,7 +50,7 @@ namespace GymSystem.Controllers
                     .Include(c => c.Trainer)
                     .Include(c => c.TrainingClass)
                     .Include(c => c.TrainingDates)
-                    .Where(c => c.MemberID == id && c.TrainingDates.Any(td => td.ClassDate > DateTime.Now.Date))
+                    .Where(c => (c.MemberID == id || c.TrainerID == id) && c.TrainingDates.Any(td => td.ClassDate > DateTime.Now.Date))
                     .Select(c => new BookedDTO
                     {
                         TrainerName = c.Trainer != null ? c.Trainer.MemberName : "未知教練",
