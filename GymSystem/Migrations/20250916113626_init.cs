@@ -145,6 +145,30 @@ namespace GymSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OperationLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MemberId = table.Column<string>(type: "nvarchar(6)", maxLength: 6, nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Device = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Target = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OperationLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OperationLogs_Members_MemberId",
+                        column: x => x.MemberId,
+                        principalTable: "Members",
+                        principalColumn: "MemberID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Attendances",
                 columns: table => new
                 {
@@ -307,6 +331,11 @@ namespace GymSystem.Migrations
                 column: "MemberSource");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OperationLogs_MemberId",
+                table: "OperationLogs",
+                column: "MemberId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TrainingDates_ContractID",
                 table: "TrainingDates",
                 column: "ContractID");
@@ -325,6 +354,9 @@ namespace GymSystem.Migrations
 
             migrationBuilder.DropTable(
                 name: "ContractEdits");
+
+            migrationBuilder.DropTable(
+                name: "OperationLogs");
 
             migrationBuilder.DropTable(
                 name: "TrainingDates");

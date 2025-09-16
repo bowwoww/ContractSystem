@@ -16,11 +16,13 @@ namespace GymSystem.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IDGenerateService _idService;
+        private readonly LogService _logService;
 
-        public ContractEditsController(AppDbContext context,IDGenerateService contractIDGenerateService)
+        public ContractEditsController(AppDbContext context,IDGenerateService contractIDGenerateService, LogService logService)
         {
             _context = context;
             _idService = contractIDGenerateService;
+            _logService = logService;
         }
 
         // GET: ContractEdits
@@ -123,6 +125,8 @@ namespace GymSystem.Controllers
                         _context.Add(contract);
                     }
                 }
+                _logService.Log(contractEdit.ContractID);
+
                 _context.Add(contractEdit);
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Index", "ContractEdits", new { contractId = contractEdit.ContractID});

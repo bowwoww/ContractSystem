@@ -1,0 +1,95 @@
+﻿@model IEnumerable<DataModel.OperationLog>
+
+@{
+    ViewData["Title"] = "操作歷史紀錄";
+}
+
+@section Css {
+    <style>
+        .device-ellipsis {
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .card-body {
+            position: relative;
+        }
+    </style>
+}
+
+<div class="card mt-4 mx-auto" style="max-width: 1600px;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+        <h4 class="mb-0">
+            <i class="bi bi-clock-history me-2 text-primary"></i>
+            操作歷史紀錄
+        </h4>
+        <div>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-outline-primary">
+                <i class="bi bi-house-door me-1"></i> 返回首頁
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-2">
+        <div class="d-flex justify-content-between mb-2">
+            <div></div>
+            <div>
+                <button type="button" class="btn btn-outline-dark me-2" data-bs-toggle="modal" data-bs-target="#tableFilterModal">
+                    <i class="bi bi-funnel me-1"></i> 進階篩選
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="clearFilterBtn">
+                    <i class="bi bi-x-circle me-1"></i> 取消篩選
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="listTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sortable">操作者</th>
+                        <th class="sortable">時間</th>
+                        <th class="sortable">行為</th>
+                        <th class="sortable">使用設備</th>
+                        <th class="sortable">目標</th>
+                        <th class="sortable">IP位置</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.MemberId</td>
+                            <td>@item.Timestamp.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                            <td>@item.Action</td>
+                            <td>
+                                <span class="device-ellipsis" data-bs-toggle="tooltip" title="@item.Device">
+                                    @(item.Device?.Length > 20 ? item.Device.Substring(0, 20) + "..." : item.Device)
+                                </span>
+                            </td>
+                            <td>@item.Target</td>
+                            <td>@item.IpAddress</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_TableFilterModal", "listTable")
+
+@section Scripts {
+    <script src="~/js/tableFiliter.js"></script>
+    <script src="~/js/tableSort.js"></script>
+    <script>
+        // 啟用 Bootstrap tooltip
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}

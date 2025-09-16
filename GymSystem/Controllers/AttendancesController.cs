@@ -1,6 +1,7 @@
 ﻿using DataModel;
 using DataModel.DTO;
 using DataModel.Security;
+using DataModel.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -21,12 +22,14 @@ namespace GymSystem.Controllers
     {
         private readonly AppDbContext _context;
         private readonly string _qrSecret;
+        private readonly LogService _logService;
 
-        public AttendancesController(AppDbContext context, IConfiguration config)
+        public AttendancesController(AppDbContext context, IConfiguration config,LogService logService)
         {
             _context = context;
-            _qrSecret = config["QrSettings:SecretKey"];
+            _qrSecret = config["QrSecretKey"];
             _qrSecret ??= "o2jfnai104ja";   //如果沒設定就給預設值
+            _logService = logService;
         }
 
         [HttpGet]
@@ -137,6 +140,7 @@ namespace GymSystem.Controllers
                     TrainerID = trainerId,
                     AttendanceDate = DateTime.Parse(signTime)
                 };
+                _logService.Log(attendance.AttendanceID);
                 _context.Attendances.Add(attendance);
                 await _context.SaveChangesAsync();
 
@@ -171,7 +175,11 @@ namespace GymSystem.Controllers
         [Authorize(Policy = "Staff")]
         public async Task<IActionResult> ConfirmTrainerSign(string ContractID, string MemberID, string SignTime, string TrainerID)
         {
-            
+            if(string.IsNullOrEmpty(ContractID) || string.IsNullOrEmpty(MemberID) || string.IsNullOrEmpty(SignTime) || string.IsNullOrEmpty(TrainerID))
+            {
+                RedirectToAction("Error", "Home", new { errorMessage = "資料不完整，無法進行簽到。" });
+            }
+
             var attendance = new Attendance
             {
                 AttendanceID = Guid.NewGuid().ToString(),
@@ -180,6 +188,7 @@ namespace GymSystem.Controllers
                 TrainerID = TrainerID,
                 AttendanceDate = DateTime.Parse(SignTime)
             };
+            _logService.Log(attendance.AttendanceID);
             _context.Attendances.Add(attendance);
             await _context.SaveChangesAsync();
 
@@ -193,7 +202,7 @@ namespace GymSystem.Controllers
         {
             if(string.IsNullOrEmpty(contractId))
             {
-                return BadRequest("必須提供 ContractID 來建立簽到記錄");
+                RedirectToAction ("Error", "Home", new { errorMessage = "請提供合約編號" });
             }
             var contract = await _context.Contracts.FindAsync(contractId);
             Attendance attendance = new Attendance();
@@ -219,6 +228,8 @@ namespace GymSystem.Controllers
             if (ModelState.IsValid)
             {
                 attendance.AttendanceID = Guid.NewGuid().ToString();
+
+                _logService.Log(attendance.AttendanceID);  
                 _context.Add(attendance);
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Create","Attendances", new {contractId = attendance.ContractID});
@@ -268,6 +279,7 @@ namespace GymSystem.Controllers
             {
                 try
                 {
+                    _logService.Log(attendance.AttendanceID);
                     _context.Update(attendance);
                     await _context.SaveChangesAsync();
                 }
@@ -289,6 +301,19 @@ namespace GymSystem.Controllers
 
             ModelState.AddModelError("", "無法更新簽到記錄，請檢查輸入的資料。");
 
+            //因為關聯資料沒寫對,須強制載入
+            attendance = await _context.Attendances.FindAsync(id);
+            if (attendance == null)
+            {
+                return NotFound();
+            }
+            Contract contract = await _context.Contracts.FindAsync(attendance.ContractID);
+            if (contract != null)
+            {
+                attendance.Member = await _context.Members.FindAsync(contract.MemberID);
+                attendance.Trainer = await _context.Members.FindAsync(contract.TrainerID);
+            }
+
             return View(attendance);
         }
 
@@ -302,6 +327,7 @@ namespace GymSystem.Controllers
             var attendance = await _context.Attendances.FindAsync(id);
             if (attendance != null)
             {
+                _logService.Log(attendance.AttendanceID);
                 _context.Attendances.Remove(attendance);
             }
 

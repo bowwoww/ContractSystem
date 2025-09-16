@@ -1,6 +1,7 @@
 ﻿using DataModel;
 using DataModel.DTO;
 using DataModel.Security;
+using DataModel.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,10 +19,13 @@ namespace GymSystem.Controllers
     public class MembersController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly LogService _logService;
 
-        public MembersController(AppDbContext context)
+        public MembersController(AppDbContext context,LogService logService)
         {
             _context = context;
+            _logService = logService;
+
         }
         [Authorize(Roles = "C")]
         // GET: Members
@@ -72,6 +76,7 @@ namespace GymSystem.Controllers
                     { member.MemberPassword = member.MemberTel.Replace("-", ""); }
 
                 member.MemberPassword = PasswordHelper.Hash(member.MemberPassword, member);
+                _logService.Log(member.MemberID);
                 _context.Add(member);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -120,6 +125,7 @@ namespace GymSystem.Controllers
 
             try
             {
+                _logService.Log(member.MemberID);
                 _context.Update(member);
                 await _context.SaveChangesAsync();
             }
@@ -151,6 +157,7 @@ namespace GymSystem.Controllers
                 if (PasswordHelper.Verify(cpData.OldPassword, member))
                 { 
                     member.MemberPassword = PasswordHelper.Hash(cpData.NewPassword, member);
+                    _logService.Log();
                     _context.Update(member);
                     await _context.SaveChangesAsync();
                     response = "密碼已成功更改";
@@ -182,6 +189,7 @@ namespace GymSystem.Controllers
                 return RedirectToAction(nameof(Edit), new { id = memberId });
             }
             member.MemberPassword = PasswordHelper.Hash(defaultPassword, member);
+            _logService.Log(memberId);
             _context.Update(member);
             await _context.SaveChangesAsync();
             TempData["Response"] = "密碼已重設為會員電話號碼（不含減號）";
@@ -201,6 +209,7 @@ namespace GymSystem.Controllers
                 return RedirectToAction("Error", "Home", new { errorMessage = "未找到會員" });
             }
             member.IsActive = !member.IsActive;
+            _logService.Log(memberId);
             _context.Update(member);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Edit), new { id = memberId });

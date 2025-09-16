@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using DataModel;
 using Microsoft.AspNetCore.Authorization;
+using DataModel.Service;
 
 namespace GymSystem.Controllers
 {
@@ -14,10 +15,12 @@ namespace GymSystem.Controllers
     public class TrainingClassesController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly LogService _logService;
 
-        public TrainingClassesController(AppDbContext context)
+        public TrainingClassesController(AppDbContext context,LogService logService)
         {
             _context = context;
+            _logService = logService;
         }
 
         // GET: TrainingClasses
@@ -44,6 +47,7 @@ namespace GymSystem.Controllers
             if (ModelState.IsValid)
             {
                 _context.Add(trainingClass);
+                _logService.Log(trainingClass.ClassTypeID);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -82,6 +86,7 @@ namespace GymSystem.Controllers
             {
                 try
                 {
+                    _logService.Log(trainingClass.ClassTypeID);
                     _context.Update(trainingClass);
                     await _context.SaveChangesAsync();
                 }

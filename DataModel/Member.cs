@@ -75,5 +75,7 @@ namespace DataModel
         public virtual List<TrainingDate>? TrainingDates { get; set; } // 一個會員可以有多個預約訓練日期
 
         public virtual KnowSource? KnowSource { get; set; } // 對應認識來源
+
+        public virtual List<OperationLog>? OperationLogs { get; set; } // 一個會員可以有多個操作紀錄
     }
 }

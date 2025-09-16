@@ -2,6 +2,7 @@ using DataModel;
 using DataModel.DTO;
 using DataModel.Security;
 using DataModel.Service;
+using Google.Api;
 using GymSystem.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -20,10 +21,12 @@ namespace GymSystem.Controllers
     {
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
-        public HomeController(AppDbContext context,NotificationService notificationService)
+        private readonly LogService _logService;
+        public HomeController(AppDbContext context,NotificationService notificationService, LogService logService)
         {
             _context = context;
             _notificationService = notificationService;
+            _logService = logService;
         }
 
         public IActionResult Login(string? returnUrl)
@@ -74,6 +77,8 @@ namespace GymSystem.Controllers
                         if (notifications != null && notifications.Count > 0)
                         { TempData["NotifityList"] = JsonConvert.SerializeObject(notifications); }
                         TempData["FromLogin"] = "1";
+                        // 紀錄登入
+                        _logService.Log(model.MemberID);
                         // 登入成功後，重定向到原來的頁面
                         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                             return Redirect(returnUrl);
@@ -121,6 +126,27 @@ namespace GymSystem.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        [Authorize]
+        public async Task<IActionResult> OperationHistoryIndex()
+        {
+            var memberId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            IQueryable<OperationLog> query = _context.OperationLogs;
+
+            if (role != "C")
+            {
+                query = query.Where(ol => ol.MemberId == memberId);
+            }
+
+            var history = await query
+                .OrderByDescending(o => o.Timestamp)
+                .Take(100)
+                .ToListAsync();
+
+            return View(history);
         }
 
 

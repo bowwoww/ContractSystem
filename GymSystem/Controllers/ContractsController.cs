@@ -17,12 +17,14 @@ namespace GymSystem.Controllers
         private readonly AppDbContext _context;
         private readonly IDGenerateService _idService;
         private readonly ContractDetailService _contractDetailService;
+        private readonly LogService _logService;
 
-        public ContractsController(AppDbContext context,IDGenerateService contractIDGenerateService, ContractDetailService contractDetailService)
+        public ContractsController(AppDbContext context,IDGenerateService contractIDGenerateService, ContractDetailService contractDetailService, LogService logService)
         {
             _context = context;
             _idService = contractIDGenerateService;
             _contractDetailService = contractDetailService;
+            _logService = logService;
         }
 
         [Authorize]
@@ -140,6 +142,9 @@ namespace GymSystem.Controllers
 
                 contract.EndDate = DateTime.Now.AddDays(addDays);
                 _context.Add(contract);
+
+                _logService.Log(contract.ContractID);
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -228,6 +233,7 @@ namespace GymSystem.Controllers
                     }
                 }
             }
+            _logService.Log(contractId);
             await _context.SaveChangesAsync();
             return RedirectToAction("Book", new { contractId });
         }

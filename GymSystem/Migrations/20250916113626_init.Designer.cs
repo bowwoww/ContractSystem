@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250913072030_init")]
+    [Migration("20250916113626_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -275,6 +275,47 @@ namespace GymSystem.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DataModel.OperationLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Device")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("MemberId")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<string>("Target")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId");
+
+                    b.ToTable("OperationLogs", (string)null);
+                });
+
             modelBuilder.Entity("DataModel.PayType", b =>
                 {
                     b.Property<string>("PayTypeID")
@@ -448,6 +489,17 @@ namespace GymSystem.Migrations
                     b.Navigation("MemberRoleNavigation");
                 });
 
+            modelBuilder.Entity("DataModel.OperationLog", b =>
+                {
+                    b.HasOne("DataModel.Member", "Operator")
+                        .WithMany("OperationLogs")
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Operator");
+                });
+
             modelBuilder.Entity("DataModel.TrainingDate", b =>
                 {
                     b.HasOne("DataModel.Contract", "Contract")
@@ -484,6 +536,8 @@ namespace GymSystem.Migrations
             modelBuilder.Entity("DataModel.Member", b =>
                 {
                     b.Navigation("Contracts");
+
+                    b.Navigation("OperationLogs");
 
                     b.Navigation("TrainingDates");
                 });

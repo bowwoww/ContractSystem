@@ -30,6 +30,8 @@ namespace DataModel
 
         public DbSet<KnowSource> KnowSources { get; set; }
 
+        public DbSet<OperationLog> OperationLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
         //    //設定要建立的資料表和欄位的對應關係
@@ -61,6 +63,11 @@ namespace DataModel
                 entiry.HasMany(m => m.TrainingDates)
                       .WithOne(td => td.Member)
                       .HasForeignKey(td => td.TrainerID)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entiry.HasMany(m => m.OperationLogs)
+                      .WithOne(ol => ol.Operator)
+                      .HasForeignKey(ol => ol.MemberId)
                       .OnDelete(DeleteBehavior.NoAction);
 
 
@@ -262,8 +269,25 @@ namespace DataModel
             });
 
 
+            modelBuilder.Entity<OperationLog>(entity =>
+            {
+                entity.ToTable("OperationLogs");
+                entity.HasKey(ol => ol.Id);
+                entity.Property(ol => ol.Id).ValueGeneratedOnAdd();
+                entity.Property(ol => ol.MemberId).IsRequired().HasMaxLength(6);
+                entity.Property(ol => ol.Action).IsRequired().HasMaxLength(100);
+                entity.Property(ol => ol.Device).IsRequired();
+                entity.Property(ol => ol.Target).HasMaxLength(100);
+                entity.Property(ol => ol.Timestamp).IsRequired();
+                entity.Property(ol => ol.IpAddress).IsRequired().HasMaxLength(45); // IPv6 最長 45 字元
+                entity.HasOne(ol => ol.Operator)
+                        .WithMany(o => o.OperationLogs)
+                        .HasForeignKey(ol => ol.MemberId)
+                        .OnDelete(DeleteBehavior.Cascade);
+            });
+
             //從Store.cs套用資料
-            
+
         }
     }
 }
