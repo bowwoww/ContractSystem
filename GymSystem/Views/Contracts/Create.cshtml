@@ -1,0 +1,90 @@
+﻿@model DataModel.Contract
+
+@{
+    ViewData["Title"] = "新增合約";
+    var memberId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var handlerName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card shadow-sm" style="border-radius: 12px; border: none;">
+            <div class="card-header bg-light" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+                <div class="row align-items-center g-2">
+                    <div class="col-12 col-md">
+                        <h4 class="mb-0">
+                            <i class="bi bi-file-earmark-plus me-2 text-success"></i>
+                            新增合約
+                        </h4>
+                    </div>
+                    <div class="col-12 col-md-auto text-md-end mt-2 mt-md-0">
+                        <a asp-action="Index" asp-route-memberId="@memberId" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> 返回合約列表
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <form asp-action="Create" autocomplete="off">
+                <div class="card-body p-4">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label asp-for="ContractID" class="form-label"></label>
+                            <input asp-for="ContractID" class="form-control" readonly />
+                            <span asp-validation-for="ContractID" class="text-danger"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Signer" class="form-label"></label>
+                            <input asp-for="Signer" class="form-control" />
+                            <span asp-validation-for="Signer" class="text-danger"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">會員</label>
+                            <input type="text" id="MemberName" class="form-control" autocomplete="off" value="" />
+                            <input type="hidden" id="MemberId" name="MemberID" value="" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">教練</label>
+                            <input type="text" id="TrainerName" class="form-control" autocomplete="off" value="" />
+                            <input type="hidden" id="TrainerId" name="TrainerID" value="" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="HandlerID" class="form-label"></label>
+                            <input type="text" class="form-control" value="@handlerName" readonly />
+                            <input type="hidden" name="HandlerID" value="@memberId" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="SignDate" class="form-label"></label>
+                            <input asp-for="SignDate" class="form-control datePicker" type="text"
+                                   value="@Model.SignDate.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="SignDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="ClassTypeID" class="form-label"></label>
+                            <select asp-for="ClassTypeID" class="form-select" asp-items="ViewBag.ClassTypeID"></select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="PayTypeID" class="form-label"></label>
+                            <select asp-for="PayTypeID" class="form-select" asp-items="ViewBag.PayTypeID"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-end p-3" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                    <input type="submit" value="新增合約" class="btn btn-success" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_JQueryUiResources")
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        setupAutocomplete('MemberName', 'MemberId', 'TrainerName', 'TrainerId');
+        initDatePicker(false);
+    </script>
+}

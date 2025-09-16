@@ -1,0 +1,34 @@
+﻿@model DataModel.DTO.NotifityModel
+@{
+    var timeSpan = Model.EstimateTime - DateTime.Now;
+    string timeAgo;
+    if (timeSpan.TotalDays >= 1)
+    {
+        timeAgo = $"{(int)timeSpan.TotalDays}天後";
+    }
+    else if (timeSpan.TotalHours >= 1)
+    {
+        timeAgo = $"{(int)timeSpan.TotalHours}小時後";
+    }
+    else
+    {
+        timeAgo = "現在";
+    }
+
+}
+<div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-estimatetime="@Model.EstimateTime.ToString("yyyy-MM-ddTHH:mm:ss")" data-value="@Model.NotifyValue">
+    <div class="toast-header">
+        <img src="~/image/logo.png" class="rounded me-2" alt="...">
+        <strong class="me-auto">@Model.Title</strong>
+        <small>@timeAgo</small>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+        <div>
+            @Html.Raw(Model.MessageUpper)
+        </div>
+        <div>
+            @Html.Raw(Model.MessageBottom)
+        </div>
+    </div>
+</div>

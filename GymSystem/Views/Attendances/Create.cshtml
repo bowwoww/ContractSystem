@@ -1,0 +1,61 @@
+﻿@model DataModel.Attendance
+
+@{
+    ViewData["Title"] = "簽到建立";
+    var defaultDate = DateTime.Now;
+    var memberId = @User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+@section Css {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+}
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none; max-width: 600px; margin: 0 auto;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-calendar-plus me-2 text-primary"></i>
+            建立簽到紀錄
+        </h4>
+        <a asp-action="ShowContracts" asp-controller="Contracts" asp-route-memberId="@memberId" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> 回簽合約表
+        </a>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="mb-3">
+                <label asp-for="ContractID" class="form-label fw-bold"></label>
+                <input asp-for="ContractID" class="form-control" value="@Model.ContractID" readonly />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">會員</label>
+                <input type="text" id="MemberName" class="form-control" autocomplete="off" value="@Model.Member.MemberName" />
+                <input type="hidden" id="MemberId" name="MemberID" value="@Model.Member.MemberID" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">教練</label>
+                <input type="text" id="TrainerName" class="form-control" autocomplete="off" value="@Model.Trainer.MemberName" />
+                <input type="hidden" id="TrainerId" name="TrainerID" value="@Model.Trainer.MemberID" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="AttendanceDate" class="form-label fw-bold"></label>
+                <input asp-for="AttendanceDate" class="form-control datePicker" type="text" value="@defaultDate.ToString("yyyy/MM/dd HH:mm")" />
+                <span asp-validation-for="AttendanceDate" class="text-danger"></span>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> 建立
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_JQueryUiResources")
+    <script>
+        setupAutocomplete('MemberName', 'MemberId', 'TrainerName', 'TrainerId');
+        initDatePicker(true);
+    </script>
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

@@ -1,0 +1,114 @@
+﻿@model DataModel.ContractEdit
+
+@{
+    ViewData["Title"] = "合約異動新增";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card shadow-sm" style="border-radius: 12px; border: none;">
+
+            <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+                <h4 class="mb-0">
+                    <i class="bi bi-pencil-square me-2 text-primary"></i>
+                    合約異動新增
+                </h4>
+                <a asp-action="Index" asp-controller="ContractEdits" asp-route-contractId="@Model.ContractID" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> 返回列表
+                </a>
+            </div>
+
+            <form asp-action="Create">
+                <div class="card-body p-4">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="row g-4">
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">簽約人</label>
+                            <input type="text" name="signer" value="@ViewData["signer"]" class="form-control" required />
+                            <span class="text-danger small" data-valmsg-for="signer" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ContractID" class="form-label fw-bold"></label>
+                            <input asp-for="ContractID" class="form-control" value="@Model.ContractID" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="HandlerID" class="form-label fw-bold"></label>
+                            <select asp-for="HandlerID" class="form-select" asp-items="ViewBag.HandlerID"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EditDate" class="form-label fw-bold"></label>
+                            <input asp-for="EditDate" class="form-control" value="@DateTime.Now.ToString()" type="text" readonly />
+                            <span asp-validation-for="EditDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EditType" class="form-label fw-bold"></label>
+                            <select asp-for="EditType" class="form-select" asp-items="ViewBag.EditType" id="EditType"></select>
+                            <span asp-validation-for="EditType" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6" id="group-NewEndDate">
+                            <label asp-for="NewEndDate" class="form-label fw-bold"></label>
+                            <input asp-for="NewEndDate" class="form-control datePicker" type="text" value="@Model.NewEndDate?.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="NewEndDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6" id="group-AddClassCount">
+                            <label asp-for="AddClassCount" class="form-label fw-bold"></label>
+                            <input asp-for="AddClassCount" class="form-control" />
+                            <span asp-validation-for="AddClassCount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6" id="group-TransferToMemberID">
+                            <label asp-for="TransferToMemberID" class="form-label fw-bold"></label>
+                            <input type="text" id="TransferToMemberName" class="form-control" autocomplete="off" />
+                            <input type="hidden" asp-for="TransferToMemberID" class="form-control" />
+                            <span asp-validation-for="TransferToMemberID" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6" id="group-TransferClassCount">
+                            <label asp-for="TransferClassCount" class="form-label fw-bold"></label>
+                            <input asp-for="TransferClassCount" class="form-control" />
+                            <span asp-validation-for="TransferClassCount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-12">
+                            <label asp-for="Remarks" class="form-label fw-bold"></label>
+                            <textarea asp-for="Remarks" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Remarks" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light text-end p-3">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> 建立
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    @await Html.PartialAsync("_JQueryUiResources")
+    <script>
+        initDatePicker(false);
+        setupAutocomplete("TransferToMemberName","TransferToMemberID");
+        // 根據 EditType 的值顯示或隱藏相關欄位
+        function updateEditTypeFields() {
+            var type = document.getElementById("EditType").value;
+            document.getElementById("group-NewEndDate").style.display = "none";
+            document.getElementById("group-AddClassCount").style.display = "none";
+            document.getElementById("group-TransferToMemberID").style.display = "none";
+            document.getElementById("group-TransferClassCount").style.display = "none";
+
+            if (type == "延展結束日期") {
+                document.getElementById("group-NewEndDate").style.display = "";
+            } else if (type == "增加課堂數") {
+                document.getElementById("group-AddClassCount").style.display = "";
+            } else if (type == "轉讓課堂") {
+                document.getElementById("group-TransferToMemberID").style.display = "";
+                document.getElementById("group-TransferClassCount").style.display = "";
+            }
+        }
+        document.getElementById("EditType").addEventListener("change", updateEditTypeFields);
+        updateEditTypeFields();
+    </script>
+}

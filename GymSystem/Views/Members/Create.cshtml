@@ -1,0 +1,121 @@
+﻿@model DataModel.Member
+
+@{
+    ViewData["Title"] = "建立新會員";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card shadow-sm" style="border-radius: 12px; border: none;">
+
+            <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+                <h4 class="mb-0">
+                    <i class="bi bi-person-plus-fill me-2 text-primary"></i>
+                    建立新會員
+                </h4>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> 返回列表
+                </a>
+            </div>
+
+            <form asp-action="Create">
+                <div class="card-body p-4">
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label asp-for="MemberID" class="form-label fw-bold"></label>
+                            <input asp-for="MemberID" class="form-control" readonly />
+                            <span asp-validation-for="MemberID" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="MemberName" class="form-label fw-bold"></label>
+                            <input asp-for="MemberName" class="form-control" placeholder="請輸入姓名" />
+                            <span asp-validation-for="MemberName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="MemberTel" class="form-label fw-bold"></label>
+                            <input asp-for="MemberTel" class="form-control" placeholder="例如: 0912345678" />
+                            <span asp-validation-for="MemberTel" class="text-danger small"></span>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label asp-for="LineID" class="form-label fw-bold"></label>
+                            <input asp-for="LineID" class="form-control" placeholder="(選填)" />
+                            <span asp-validation-for="LineID" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="MemberBirthday" class="form-label fw-bold"></label>
+                            <div class="input-group">
+                                <input asp-for="MemberBirthday" class="form-control datePicker" type="text" id="birthdayValue" value="1990-01-01" autocomplete="off" />
+                                <button type="button" class="btn btn-outline-secondary" onclick="ClearBirthday()">
+                                    <i class="bi bi-x-circle"></i> 清除
+                                </button>
+                            </div>
+                            <span asp-validation-for="MemberBirthday" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">@Html.DisplayNameFor(model => model.MemberGender)</label>
+                            <div class="d-flex align-items-center" style="height: 38px;">
+                                <div class="form-check me-4">
+                                    <input class="form-check-input" type="radio" asp-for="MemberGender" value="true" id="genderMale" checked />
+                                    <label class="form-check-label" for="genderMale">男</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" asp-for="MemberGender" value="false" id="genderFemale" />
+                                    <label class="form-check-label" for="genderFemale">女</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label asp-for="MemberAddress" class="form-label fw-bold"></label>
+                            <input asp-for="MemberAddress" class="form-control" placeholder="(選填)" />
+                            <span asp-validation-for="MemberAddress" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="MemberRole" class="form-label fw-bold"></label>
+                            <select asp-for="MemberRole" class="form-select" asp-items="ViewBag.MemberRole"></select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="MemberSource" class="form-label fw-bold"></label>
+                            <select asp-for="MemberSource" class="form-select" asp-items="ViewBag.MemberSource"></select>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label asp-for="MemberRemark" class="form-label fw-bold"></label>
+                            <textarea asp-for="MemberRemark" class="form-control" rows="3" placeholder="(選填)"></textarea>
+                            <span asp-validation-for="MemberRemark" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light text-end p-3">
+                    <button type="submit" value="Create" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> 建立
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @await Html.PartialAsync("_JQueryUiResources")
+    <script>
+        initDatePicker(false);
+
+        function ClearBirthday(){
+            $('#birthdayValue').val('');
+        }
+    </script>
+}

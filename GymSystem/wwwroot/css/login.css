@@ -1,0 +1,63 @@
+﻿body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Noto Sans TC', sans-serif;
+}
+
+.bg-image {
+    /* 背景圖片 URL (來自 Unsplash) */
+    background-image: url('/image/background.avif');
+    filter: blur(3px) brightness(0.7);
+    -webkit-filter: blur(3px) brightness(0.7);
+    /* 全螢幕覆蓋 */
+    height: 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: -1;
+}
+
+.login-container {
+    height: 90vh;
+    min-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2.5rem;
+    border-radius: 15px;
+    background-color: rgba(0, 0, 0, 0.65); /* 半透明黑色背景 */
+    backdrop-filter: blur(10px); /* 毛玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.form-floating label {
+    color: #aaa;
+}
+
+.form-control {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+    .form-control:focus {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-color: #0d6efd;
+        box-shadow: none;
+        color: white;
+    }
+
+.btn-primary {
+    padding: 0.75rem;
+    font-weight: bold;
+}

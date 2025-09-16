@@ -1,0 +1,87 @@
+﻿@model DataModel.Attendance
+
+@{
+    ViewData["Title"] = "簽到編輯";
+}
+
+@section Css {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+}
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none; max-width: 600px; margin: 0 auto;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-pencil-square me-2 text-primary"></i>
+            編輯簽到紀錄
+        </h4>
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> 回簽到列表
+        </a>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="Edit" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input type="hidden" asp-for="AttendanceID" />
+            <div class="mb-3">
+                <label asp-for="ContractID" class="form-label fw-bold"></label>
+                <input asp-for="ContractID" class="form-control" value="@Model.ContractID" readonly />
+                <span asp-validation-for="ContractID" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">會員</label>
+                <input type="text" id="memberName" class="form-control" autocomplete="off" value="@Model.Member.MemberName" />
+                <input type="hidden" id="memberId" name="MemberID" value="@Model.Member.MemberID" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">教練</label>
+                <input type="text" id="trainerName" class="form-control" autocomplete="off" value="@Model.Trainer.MemberName" />
+                <input type="hidden" id="trainerId" name="TrainerID" value="@Model.Trainer.MemberID" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="AttendanceDate" class="form-label fw-bold"></label>
+                <input asp-for="AttendanceDate" class="form-control" value="@Model.AttendanceDate.ToString("yyyy/MM/dd HH:mm")" type="datetime" />
+                <span asp-validation-for="AttendanceDate" class="text-danger"></span>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> 儲存
+                </button>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="bi bi-trash me-1"></i> 刪除
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.AttendanceID" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">確認刪除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+                </div>
+                <div class="modal-body">
+                    您確定要刪除此筆簽到紀錄嗎？此操作無法復原。
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-danger">確認刪除</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="~/js/autocomplete.js"></script>
+    <script>
+        setupAutocomplete('memberName', 'memberId', 'trainerName', 'trainerId');
+    </script>
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

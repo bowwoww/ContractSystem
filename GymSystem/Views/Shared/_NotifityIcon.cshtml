@@ -1,0 +1,38 @@
+﻿@* 使用 Bootstrap Icons 的 chat-right-text，右上角加一個小數字徽章 *@
+<style>
+    .icon-badge-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .icon-badge {
+        position: absolute;
+        top: -7px;
+        right: -15px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 0.6em;
+        min-width: 18px;
+        text-align: center;
+        line-height: 1;
+    }
+    .icon-light {
+        color: #adb5bd; /* Bootstrap 淡灰色 */
+    }
+</style>
+
+<a asp-controller="Home" asp-action="NotifityList" class="icon-badge-wrapper me-3" style="text-decoration:none;">
+    <i class="bi bi-chat-right-text icon-light"></i>
+    <span class="icon-badge" id="notifityBadge">3</span>
+</a>
+
+<script>
+        document.addEventListener('DOMContentLoaded', function () {
+        var badge = document.getElementById('notifityBadge');
+        if (badge) {
+            var count = localStorage.getItem('notifityBadgeCount');
+            badge.textContent = count ? count : '0';
+        }
+    });
+</script>

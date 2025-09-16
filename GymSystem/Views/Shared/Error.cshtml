@@ -1,0 +1,10 @@
+﻿@{
+    ViewData["Title"] = "錯誤";
+    var errorMessage = ViewData["ErrorMessage"] as string;
+}
+<div class="alert alert-danger mt-5 text-center">
+    <h4 class="border-2 border border-primary">發生錯誤</h4>
+    <p>錯誤訊息：@errorMessage</p>
+    <p>如問題無法解決請聯繫管理員</p>
+    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary mt-3">回首頁</a>
+</div>

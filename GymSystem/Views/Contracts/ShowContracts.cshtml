@@ -1,0 +1,171 @@
+﻿@model IEnumerable<DataModel.DTO.ContractDTO>
+
+@{
+    ViewData["Title"] = "合約表";
+    var memberId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    int pageIndex = ViewBag.PageIndex ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalCount = ViewBag.TotalCount ?? 0;
+    int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+}
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2 text-success"></i>
+            合約表
+        </h4>
+        <a asp-action="Index" asp-controller="Home" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> 返回首頁
+        </a>
+    </div>
+
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between mb-3">
+            <div>
+                @if (User.IsInRole("C"))
+                {
+                    <a asp-action="Create" class="btn btn-success">
+                        <i class="bi bi-plus-lg me-1"></i> 新增合約
+                    </a>
+                }
+                <button type="button" class="btn btn-warning" id="toggleActiveBtn">
+                    <i class="bi bi-check-circle me-1"></i> 已完結
+                </button>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#tableFilterModal">
+                    <i class="bi bi-funnel me-1"></i> 進階篩選
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="clearFilterBtn">
+                    <i class="bi bi-x-circle me-1"></i> 取消篩選
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle" id="listTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.Signer)</th>
+                        <th>@Html.DisplayNameFor(model => model.SignDate)</th>
+                        <th>@Html.DisplayNameFor(model => model.EndDate)</th>
+                        <th>@Html.DisplayNameFor(model => model.ClassType)</th>
+                        <th>@Html.DisplayNameFor(model => model.PayType)</th>
+                        @if (!User.IsInRole("A"))
+                        {
+                            <th>
+                                @Html.DisplayNameFor(model => model.Member)
+                            </th>
+                        }
+                        <th>@Html.DisplayNameFor(model => model.Handler)</th>
+                        <th>@Html.DisplayNameFor(model => model.Trainer)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr data-used="@item.UsedClassCount" data-max="@item.MaxClassCount">
+                            <td>@Html.DisplayFor(modelItem => item.Signer)</td>
+                            <td>@Html.DisplayFor(modelItem => item.SignDate)</td>
+                            <td>@Html.DisplayFor(modelItem => item.EndDate)</td>
+                            <td>@Html.DisplayFor(modelItem => item.ClassType)</td>
+                            <td>@Html.DisplayFor(modelItem => item.PayType)</td>
+                            @if (!User.IsInRole("A"))
+                            {
+                                <td>
+                                    @Html.DisplayFor(model => item.Member.MemberName)
+                                </td>
+                            }
+                            <td>@Html.DisplayFor(modelItem => item.Handler.MemberName)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Trainer.MemberName)</td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.ContractID" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-search me-1"></i> 合約內容
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分頁元件 -->
+        @if (totalPages > 1)
+        {
+            <nav aria-label="合約分頁" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(pageIndex == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("ShowContracts", new { memberId = memberId, pageIndex = pageIndex - 1, pageSize = pageSize })">上一頁</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == pageIndex ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("ShowContracts", new { memberId = memberId, pageIndex = i, pageSize = pageSize })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(pageIndex == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("ShowContracts", new { memberId = memberId, pageIndex = pageIndex + 1, pageSize = pageSize })">下一頁</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+@await Html.PartialAsync("_TableFilterModal", "listTable")
+
+@section Scripts {
+    <script src="~/js/tableFiliter.js"></script>
+    <script src="~/js/tableSort.js"></script>
+    <script>
+        let showAll = true;
+        const toggleBtn = document.getElementById('toggleActiveBtn');
+        toggleBtn.addEventListener('click', function () {
+            showAll = !showAll;
+            if (showAll) {
+                toggleBtn.classList.remove('btn-outline-warning');
+                toggleBtn.classList.add('btn-warning');
+                $('#listTable tbody tr').show();
+            } else {
+                toggleBtn.classList.remove('btn-warning');
+                toggleBtn.classList.add('btn-outline-warning');
+                $('#listTable tbody tr').each(function () {
+                    const used = parseInt($(this).data('used'), 10);
+                    const max = parseInt($(this).data('max'), 10);
+                    if (used < max) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            }
+            applyFilters();
+        });
+
+        function applyFilters() {
+            $('#listTable tbody tr').each(function () {
+                let used = parseInt($(this).data('used'), 10);
+                let max = parseInt($(this).data('max'), 10);
+                let show = true;
+
+                // 已完結篩選
+                if (!showAll && used >= max) {
+                    show = false;
+                }
+
+                // 進階篩選（假設你有一個 isAdvancedMatch(tr) 方法）
+                if (typeof isAdvancedMatch === 'function' && !isAdvancedMatch(this)) {
+                    show = false;
+                }
+
+                $(this).toggle(show);
+            });
+        }
+        // 頁面載入時初始化
+        $(document).ready(function () {
+            applyFilters();
+        });
+    </script>
+}

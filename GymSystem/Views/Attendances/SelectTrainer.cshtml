@@ -1,0 +1,39 @@
+﻿@{
+    ViewData["Title"] = "選擇教練簽到";
+    var memberName = ViewData["MemberName"] as string ?? "";
+    var contractId = ViewData["ContractID"];
+    var memberId = ViewData["MemberID"];
+    var signTime = ViewData["SignTime"];
+}
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none; max-width: 600px; margin: 0 auto;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-person-check-fill me-2 text-primary"></i>
+            選擇教練簽到
+        </h4>
+        <a asp-action="Create" asp-controller="Attendances" asp-route-contractId="@contractId" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> 返回簽到建立
+        </a>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="ConfirmTrainerSign" method="post">
+            <input type="hidden" name="ContractID" value="@contractId" />
+            <input type="hidden" name="MemberID" value="@memberId" />
+            <input type="hidden" name="SignTime" value="@signTime" />
+            <div class="mb-3">
+                <label class="form-label fw-bold">會員</label>
+                <input type="text" class="form-control" value="@memberName" readonly />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">請選擇教練</label>
+                <select name="TrainerID" class="form-select" asp-items="ViewBag.CoachList"></select>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-square me-1"></i> 簽到
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

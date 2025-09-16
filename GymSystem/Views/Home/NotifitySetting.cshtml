@@ -1,0 +1,129 @@
+﻿@{
+    ViewData["Title"] = "提醒時間設定";
+    var memberRole = User.FindFirst("MemberRole")?.Value;
+}
+
+<div class="container mt-5">
+    <h3 class="text-center mb-4">提醒設定</h3>
+    <div class="row justify-content-center">
+        <div class="col-6 col-md-8 col-sm-10">
+
+            <!-- 預約提醒天數 -->
+            <label for="notifityRange" class="form-label">預約提醒天數（0=關閉，最大5天）</label>
+            <div class="d-flex align-items-center mb-2">
+                <span class="me-2">0</span>
+                <input type="range" class="form-range flex-grow-1" min="0" max="5" id="notifityRange" />
+                <span class="ms-2">5</span>
+            </div>
+            <div class="mb-3 text-center">
+                <span>目前設定：<strong id="notifityValue">2</strong> 天</span>
+            </div>
+            @if (memberRole == "B")
+            {
+                <!-- 生日提醒設定 -->
+                <label for="birthdayRange" class="form-label">生日提醒設定（0=關閉，最大5天）</label>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="me-2">0</span>
+                    <input type="range" class="form-range flex-grow-1" min="0" max="5" id="birthdayRange" />
+                    <span class="ms-2">5</span>
+                </div>
+                <div class="mb-3 text-center">
+                    <span>目前設定：<strong id="birthdayValue">2</strong> 天</span>
+                </div>
+
+                <!-- 合約課程用盡提醒 -->
+                <label for="exhaustRange" class="form-label">合約課程用盡提醒（0=關閉，最大5堂）</label>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="me-2">0</span>
+                    <input type="range" class="form-range flex-grow-1" min="0" max="5" id="exhaustRange" />
+                    <span class="ms-2">5</span>
+                </div>
+                <div class="mb-3 text-center">
+                    <span>目前設定：<strong id="exhaustValue">2</strong> 堂</span>
+                </div>
+            }
+            <div class="mt-5 d-flex justify-content-center">
+                <button id="saveBtn" class="btn btn-primary me-2">儲存</button>
+                <a href="/Home/Index" class="btn btn-secondary">回到首頁</a>
+            </div>
+
+            <div class=" d-flex justify-content-center">
+                <div class="text-danger ms-3" id="hint"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 預設值
+        const defaultNotifity = 2;
+        const defaultBirthday = 2;
+        const defaultExhaust = 2;
+
+        // 取得 localStorage 值
+        let notifityValue = parseInt(localStorage.getItem('dayNotifity'), 10);
+        if (isNaN(notifityValue)) notifityValue = defaultNotifity;
+
+        let birthdayValue = parseInt(localStorage.getItem('birthdayNotifityDays'), 10);
+        if (isNaN(birthdayValue)) birthdayValue = defaultBirthday;
+
+        let exhaustValue = parseInt(localStorage.getItem('classExhaustNotifityCount'), 10);
+        if (isNaN(exhaustValue)) exhaustValue = defaultExhaust;
+
+        // 初始化 range 與顯示
+        const notifityRange = document.getElementById('notifityRange');
+        const notifityLabel = document.getElementById('notifityValue');
+        if(notifityLabel != null && notifityRange != null)
+        {
+            notifityRange.value = notifityValue;
+            notifityLabel.textContent = notifityValue;
+
+            notifityRange.addEventListener('input', function () {
+                notifityLabel.textContent = this.value;
+                document.getElementById('hint').textContent = '';
+            });
+        }
+
+
+        const birthdayRange = document.getElementById('birthdayRange');
+        const birthdayLabel = document.getElementById('birthdayValue');
+        if(birthdayLabel != null && birthdayRange != null)
+        {
+            birthdayRange.value = birthdayValue;
+            birthdayLabel.textContent = birthdayValue;
+
+            birthdayRange.addEventListener('input', function () {
+                birthdayLabel.textContent = this.value;
+                document.getElementById('hint').textContent = '';
+            });
+        }
+
+        const exhaustRange = document.getElementById('exhaustRange');
+        const exhaustLabel = document.getElementById('exhaustValue');
+        if(exhaustLabel != null && exhaustRange != null)
+        {
+            exhaustRange.value = exhaustValue;
+            exhaustLabel.textContent = exhaustValue;
+
+            exhaustRange.addEventListener('input', function () {
+                exhaustLabel.textContent = this.value;
+                document.getElementById('hint').textContent = '';
+            });
+        }
+
+
+
+
+        // 儲存按鈕
+        document.getElementById('saveBtn').addEventListener('click', function () {
+            localStorage.setItem('dayNotifity', notifityRange.value);
+            if(birthdayRange != null && exhaustRange != null)
+            {
+                localStorage.setItem('birthdayNotifityDays', birthdayRange.value);
+                localStorage.setItem('classExhaustNotifityCount', exhaustRange.value);
+            }
+            document.getElementById('hint').textContent = '已儲存';
+        });
+    </script>
+}

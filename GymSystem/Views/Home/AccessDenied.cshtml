@@ -1,0 +1,11 @@
+﻿@{
+    // 直接取得 ReturnUrl query string
+    var deniedUrl = Context.Request.Query["ReturnUrl"].ToString();
+}
+
+<h1>您沒有權限存取此頁面</h1>
+<div>
+    或者您可
+    <a href="@Url.Action("Logout", "Home", new { returnUrl = deniedUrl })">登出</a>
+    並重新登入對應權限會員帳號
+</div>

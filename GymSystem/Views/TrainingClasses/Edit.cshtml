@@ -1,0 +1,50 @@
+﻿@model DataModel.TrainingClass
+
+@{
+    ViewData["Title"] = "課程編輯";
+}
+
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none; max-width: 600px; margin: 0 auto;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-pencil-square me-2 text-primary"></i>
+            編輯課程
+        </h4>
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> 回課程列表
+        </a>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input type="hidden" asp-for="ClassTypeID" />
+            <div class="mb-3">
+                <label asp-for="ClassName" class="form-label fw-bold"></label>
+                <input asp-for="ClassName" class="form-control" autocomplete="off" />
+                <span asp-validation-for="ClassName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ClassLength" class="form-label fw-bold"></label>
+                <input asp-for="ClassLength" class="form-control" />
+                <span asp-validation-for="ClassLength" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ClassDescription" class="form-label fw-bold"></label>
+                <input asp-for="ClassDescription" class="form-control" autocomplete="off" />
+                <span asp-validation-for="ClassDescription" class="text-danger"></span>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> 儲存
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

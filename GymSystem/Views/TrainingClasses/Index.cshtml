@@ -1,0 +1,93 @@
+﻿@model IEnumerable<DataModel.TrainingClass>
+
+@{
+    ViewData["Title"] = "課程管理";
+    int maxLength = 20;
+    Func<string?, int, string> truncate = (desc, len) =>
+    {
+        if (string.IsNullOrEmpty(desc)) return "";
+        return desc.Length > len ? desc.Substring(0, len) + "..." : desc;
+    };
+    // 篩選用：取得所有課程長度分段
+    var lengthGroups = Model.Select(c => c.ClassLength)
+        .Distinct()
+        .OrderBy(l => l)
+        .ToList();
+}
+
+
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-journal-text me-2 text-primary"></i>
+            課程管理
+        </h4>
+
+    </div>
+
+    <div class="card-body p-4">
+        <!-- 篩選按鈕區塊 -->
+        <div class="mb-3 d-flex justify-content-between">
+            <div class="d-flex gap-2">
+                <a asp-action="Create" class="btn btn-success">
+                    <i class="bi bi-plus-lg me-1"></i> 建立新課程
+                </a>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#tableFilterModal">
+                    <i class="bi bi-funnel me-1"></i> 進階篩選
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="clearFilterBtn">
+                    <i class="bi bi-x-circle me-1"></i> 取消篩選
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="listTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sortable" style="cursor:pointer">
+                            @Html.DisplayNameFor(model => model.ClassTypeID)
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th>@Html.DisplayNameFor(model => model.ClassName)</th>
+                        <th class="sortable" style="cursor:pointer">
+                            @Html.DisplayNameFor(model => model.ClassLength)
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th>@Html.DisplayNameFor(model => model.ClassDescription)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr data-length="@item.ClassLength">
+                            <td>@Html.DisplayFor(modelItem => item.ClassTypeID)</td>
+                            <td>@Html.DisplayFor(modelItem => item.ClassName)</td>
+                            <td>@Html.DisplayFor(modelItem => item.ClassLength)</td>
+                            <td>@truncate(item.ClassDescription, maxLength)</td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@item.ClassTypeID" class="btn btn-outline-primary btn-sm me-1">
+                                    <i class="bi bi-pencil-square"></i> 編輯
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_TableFilterModal", "listTable")
+
+@section Scripts {
+    <script src="~/js/tableFiliter.js"></script>
+    <script src="~/js/tableSort.js"></script>
+    <script>
+
+    </script>
+}

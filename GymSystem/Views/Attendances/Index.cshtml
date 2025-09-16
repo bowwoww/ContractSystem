@@ -1,0 +1,275 @@
+﻿@model IEnumerable<DataModel.Attendance>
+
+@{
+    ViewData["Title"] = "簽到紀錄";
+    var attendanceDates = Model.Select(a => a.AttendanceDate).ToList();
+    var years = attendanceDates.Select(d => d.Year).Distinct().OrderBy(y => y).ToList();
+
+    // 如果沒有任何年份，加入今年
+    if (!years.Any())
+    {
+        years.Add(DateTime.Now.Year);
+    }
+
+    var attendanceDatesJson = Newtonsoft.Json.JsonConvert.SerializeObject(
+        attendanceDates.Select(d => d.ToString("yyyy-MM-dd HH:mm")));
+    var yearsJson = Newtonsoft.Json.JsonConvert.SerializeObject(years);
+
+    // 取得所有出席紀錄的合約（不重複）
+    var contracts = Model
+        .Where(a => a.Contract != null)
+        .Select(a => a.Contract)
+        .Distinct()
+        .ToList();
+
+    // 取得預約資料
+    var bookedDTOs = ViewData["BookedDTOs"] as List<DataModel.DTO.BookedDTO> ?? new();
+    var bookedDates = bookedDTOs.SelectMany(b => b.ClassDate).ToList();
+    var bookedDatesJson = Newtonsoft.Json.JsonConvert.SerializeObject(
+        bookedDates.Select(d => d.ToString("yyyy-MM-dd HH:mm"))
+    );
+
+    // 合約分組（依 signDate+ClassName）
+    var contractGroups = contracts
+        .GroupBy(c => new { c.SignDate, ClassName = c.TrainingClass?.ClassName ?? "未知課程" })
+        .ToList();
+
+    var bookedGroups = bookedDTOs
+        .GroupBy(b => new { ContractCreatDate = b.ContractCreatDate, ContractClassName = b.ContractClassName })
+        .ToList();
+
+    // 合併分組
+    var allGroups = contractGroups
+        .Select(g => new { g.Key.SignDate, g.Key.ClassName, Contracts = g.ToList(), Booked = bookedGroups.FirstOrDefault(bg => bg.Key.ContractCreatDate == g.Key.SignDate && bg.Key.ContractClassName == g.Key.ClassName) })
+        .Union(
+            bookedGroups
+                .Where(bg => !contractGroups.Any(g => g.Key.SignDate == bg.Key.ContractCreatDate && g.Key.ClassName == bg.Key.ContractClassName))
+                .Select(bg => new { SignDate = bg.Key.ContractCreatDate, ClassName = bg.Key.ContractClassName, Contracts = new List<DataModel.Contract>(), Booked = bg })
+        )
+        .OrderBy(g => g.SignDate)
+        .ThenBy(g => g.ClassName)
+        .ToList();
+}
+
+@section Css {
+    <link rel="stylesheet" href="~/css/book.css" asp-append-version="true" />
+}
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-calendar-check me-2 text-primary"></i>
+            簽到紀錄總覽
+        </h4>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-house-door me-1"></i> 回到首頁
+        </a>
+    </div>
+
+    <div class="card-body p-4">
+        <div class="row g-4">
+            <!-- 行事曆 -->
+            <div class="col-lg-7">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <label class="form-label mb-0 fw-bold">選擇年月：</label>
+                    <select id="yearSelect" class="form-select w-auto"></select>
+                    <select id="monthSelect" class="form-select w-auto"></select>
+                    <div class="form-check form-switch ms-3">
+                        <input class="form-check-input" type="checkbox" id="toggleChart">
+                        <label class="form-check-label" for="toggleChart">
+                            顯示每月簽到/預約次數
+                        </label>
+                    </div>
+                </div>
+                <div id="calendar"></div>
+            </div>
+
+            <!-- 簽到/預約總表 -->
+            <div class="col-lg-5">
+                <h5 class="fw-bold mb-3"><i class="bi bi-table me-2"></i>簽到/預約總表</h5>
+                <!-- 合約篩選 select list -->
+                <div class="mb-2">
+                    <select id="contractFilter" class="form-select w-auto">
+                        <option value="">全部</option>
+                        @foreach (var group in allGroups)
+                        {
+                            var text = $"{group.SignDate:yyyy/MM/dd} {group.ClassName}";
+                            <option value="@text">@text</option>
+                        }
+                    </select>
+                </div>
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-bordered table-hover text-center" id="attendanceTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日期</th>
+                                <th>合約</th>
+                                <th>教練</th>
+                                <th>類型</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.OrderByDescending(a => a.AttendanceDate))
+                            {
+                                var key = $"{item.Contract?.SignDate:yyyy/MM/dd} {item.Contract?.TrainingClass?.ClassName ?? "未知課程"}";
+                                <tr data-contractid="@key">
+                                    <td>@item.AttendanceDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@item.Contract?.TrainingClass?.ClassName</td>
+                                    <td>@item.Trainer?.MemberName</td>
+                                    <td>簽到</td>
+                                </tr>
+                            }
+                            @foreach (var booked in bookedDTOs)
+                            {
+                                var key = $"{booked.ContractCreatDate:yyyy/MM/dd} {booked.ContractClassName}";
+                                foreach (var date in booked.ClassDate)
+                                {
+                                    <tr data-contractid="@key">
+                                        <td>@date.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td>@booked.ContractClassName</td>
+                                        <td>@booked.TrainerName</td>
+                                        <td>預約</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- 柱狀圖區塊，預設隱藏 -->
+        <div class="d-flex justify-content-center align-content-center" id="chartRow" style="display:none;">
+            <div class="col-xl-6 col-lg-8 col-md-6">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const attendanceDates = @Html.Raw(attendanceDatesJson);
+        const bookedDates = @Html.Raw(bookedDatesJson);
+        const years = @Html.Raw(yearsJson);
+
+        // 初始化年月選單
+        const now = new Date();
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        years.forEach(y => {
+            yearSelect.add(new Option(y, y));
+        });
+        for (let m = 1; m <= 12; m++) {
+            monthSelect.add(new Option(m, m));
+        }
+        // 預設選擇第一個有資料的年份
+        yearSelect.value = years.includes(now.getFullYear()) ? now.getFullYear() : years[0];
+        monthSelect.value = now.getMonth() + 1;
+
+        // 行事曆渲染
+        function renderCalendar() {
+            const year = parseInt(yearSelect.value);
+            const month = parseInt(monthSelect.value);
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            let html = '<table class="table table-bordered text-center"><thead><tr>';
+            ['日', '一', '二', '三', '四', '五', '六'].forEach(d => html += `<th>${d}</th>`);
+            html += '</tr></thead><tbody><tr>';
+
+            for (let i = 0; i < firstDay.getDay(); i++) html += '<td></td>';
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isAttendance = attendanceDates.find(d => d.startsWith(dateStr));
+                const isBooked = bookedDates.find(d => d.startsWith(dateStr));
+                let cellClass = isAttendance ? 'day-booked-self' : '';
+                if (isBooked) cellClass += ' day-selected';
+                html += `<td class="${cellClass}">${day}`;
+                if (isAttendance) html += '<br><span class="badge bg-success">已簽到</span>';
+                if (isBooked) html += '<br><span class="badge bg-warning text-dark">已預約</span>';
+                html += '</td>';
+                if ((firstDay.getDay() + day) % 7 === 0) html += '</tr><tr>';
+            }
+            html += '</tr></tbody></table>';
+            document.getElementById('calendar').innerHTML = html;
+        }
+        yearSelect.onchange = monthSelect.onchange = renderCalendar;
+        renderCalendar();
+
+        // 柱狀圖渲染
+        let chartInstance = null;
+        function showChart() {
+            const selectedYear = yearSelect.value;
+            const attendanceMonthCounts = Array(12).fill(0);
+            const bookedMonthCounts = Array(12).fill(0);
+
+            attendanceDates.forEach(d => {
+                const dt = new Date(d);
+                if (dt.getFullYear() == selectedYear) {
+                    attendanceMonthCounts[dt.getMonth()]++;
+                }
+            });
+            bookedDates.forEach(d => {
+                const dt = new Date(d);
+                if (dt.getFullYear() == selectedYear) {
+                    bookedMonthCounts[dt.getMonth()]++;
+                }
+            });
+
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+                    datasets: [
+                        {
+                            label: '簽到次數',
+                            data: attendanceMonthCounts,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                        },
+                        {
+                            label: '預約次數',
+                            data: bookedMonthCounts,
+                            backgroundColor: 'rgba(255, 193, 7, 0.6)'
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '次數' },
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 開關事件：顯示/隱藏柱狀圖
+        document.getElementById('toggleChart').onchange = function () {
+            const chartRow = document.getElementById('chartRow');
+            if (this.checked) {
+                chartRow.style.display = '';
+                showChart();
+            } else {
+                chartRow.style.display = 'none';
+                if (chartInstance) chartInstance.destroy();
+            }
+        };
+
+        document.getElementById('contractFilter').addEventListener('change', function () {
+            var selected = this.value;
+            var rows = document.querySelectorAll('#attendanceTable tbody tr');
+            rows.forEach(function (row) {
+                if (!selected || row.getAttribute('data-contractid') === selected) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+}

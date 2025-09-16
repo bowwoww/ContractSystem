@@ -1,0 +1,54 @@
+﻿@model DataModel.DTO.LoginModel;
+
+@{
+
+    ViewData["Title"] = "會員登入";
+    var error = ViewData["ErrorMessage"];
+}
+
+@section Css {
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+}
+<div class="bg-image"></div>
+<div class="login-container">
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <i class="bi bi-person-workspace" style="font-size: 1.5em; vertical-align: middle;"></i>
+            <h3 class="mt-3">會員管理系統</h3>
+            <p class="text-white-50">請登入您的帳號</p>
+        </div>
+        <form asp-action="Login" method="post">
+            <div class="text-danger mb-3 text-center" id="hint"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="MemberID" class="form-control" placeholder="帳號" />
+                <label asp-for="MemberID"></label>
+                <span asp-validation-for="MemberID" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-4">
+                <input asp-for="MemberPassword" class="form-control" type="password" placeholder="密碼" />
+                <label asp-for="MemberPassword"></label>
+                <span asp-validation-for="MemberPassword" class="text-danger"></span>
+            </div>
+            <input type="hidden" name="ReturnUrl" value="@ViewData["ReturnUrl"]" />
+            <button type="submit" class="btn btn-primary w-100">登入</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        var error = '@error';
+        var hint = document.getElementById("hint");
+        if(error == "1")
+        {
+            hint.innerText = "會員已被停用，請聯絡管理員";
+        }
+        else if(error == "2")
+        {
+            hint.innerText = "會員不存在或者密碼錯誤";
+        }
+    </script>
+}

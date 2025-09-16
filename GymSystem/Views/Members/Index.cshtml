@@ -1,0 +1,198 @@
+﻿@{
+    ViewData["Title"] = "會員管理";
+}
+
+@section Css {
+    <style>
+        .filter-btn.active {
+            border: 2px solid #333;
+            box-shadow: 0 0 4px #333;
+        }
+
+        .table-warning.text-decoration-line-through {
+            opacity: 0.6;
+        }
+    </style>
+}
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-people-fill me-2 text-primary"></i>
+            帳號管理
+        </h4>
+        <a asp-action="Create" class="btn btn-sm btn-success">
+            <i class="bi bi-person-plus me-1"></i> 建立新帳號
+        </a>
+    </div>
+
+    <div class="card-body p-4">
+        <!-- 篩選按鈕區塊 -->
+        <div class="mb-3 d-flex justify-content-between">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary filter-btn" data-role="A">
+                    <i class="bi bi-person me-1"></i> 會員
+                </button>
+                <button type="button" class="btn btn-outline-success filter-btn" data-role="B">
+                    <i class="bi bi-person-badge me-1"></i> 教練
+                </button>
+                <button type="button" class="btn btn-outline-warning filter-btn" data-role="C">
+                    <i class="bi bi-person-gear me-1"></i> 管理者
+                </button>
+                <button type="button" class="btn btn-outline-info filter-btn" data-active="true">
+                    <i class="bi bi-check-circle me-1"></i> 啟用
+                </button>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary" id="clearFilterBtn">
+                    <i class="bi bi-x-circle me-1"></i> 取消篩選
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="listTable">
+                <thead class="table-light">
+                    <tr>
+                        <th data-sort="MemberName" style="cursor:pointer">姓名</th>
+                        <th data-sort="MemberTel" style="cursor:pointer">電話</th>
+                        <th data-sort="LineID" style="cursor:pointer">LineID</th>
+                        <th data-sort="MemberBirthday" style="cursor:pointer">生日</th>
+                        <th data-sort="MemberGender" style="cursor:pointer">性別</th>
+                        <th>地址</th> <!-- 移除 data-sort -->
+                        <th data-sort="KnowHow" style="cursor:pointer">來源</th>
+                        <th>合約數</th> <!-- 移除 data-sort -->
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 會員資料將由 JS 動態產生 -->
+                </tbody>
+            </table>
+        </div>
+        <nav>
+            <ul class="pagination justify-content-center" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 狀態參數
+        let pageIndex = 1;
+        let pageSize = 10;
+        let sortBy = "MemberID";
+        let order = 0; // 0: ASC, 1: DESC
+        let selectedRoles = [];
+        let isActive = -1;
+
+        // 載入會員資料
+        async function loadMembers() {
+            let roleParam = selectedRoles.join('');
+            const url = `/api/MembersApi/allmembers?pageIndex=${pageIndex}&pageSize=${pageSize}&role=${roleParam}&isActive=${isActive}&sortBy=${sortBy}&order=${order}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            console.log(data);
+            renderTable(data.members);
+            renderPagination(data.totalCount);
+        }
+
+        // 渲染表格
+        function renderTable(members) {
+            const tbody = document.querySelector('#listTable tbody');
+            tbody.innerHTML = '';
+            members.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-role', item.memberRole);
+                tr.setAttribute('data-active', item.isActive);
+
+                tr.innerHTML = `
+                    <td class="${item.isActive ? "" : "table-warning text-decoration-line-through"}">${item.memberName}</td>
+                    <td>${item.memberTel ?? ""}</td>
+                    <td>${item.lineID ?? ""}</td>
+                    <td>${item.memberBirthday ? item.memberBirthday.split('T')[0] : ""}</td>
+                    <td>${item.memberGender ? "男" : "女"}</td>
+                    <td>${item.memberAddress ?? ""}</td>
+                    <td>${item.knowHow ?? ""}</td>
+                    <td>${item.ownedContractsCount}</td>
+                    <td>
+                        <a href="/Members/Edit/${item.memberID}" class="btn btn-outline-primary btn-sm me-1">
+                            <i class="bi bi-pencil-square"></i> 編輯
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 渲染分頁
+        function renderPagination(totalCount) {
+            const totalPages = Math.ceil(totalCount / pageSize);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = 'page-item' + (i === pageIndex ? ' active' : '');
+                li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                li.onclick = function () {
+                    pageIndex = i;
+                    loadMembers();
+                };
+                pagination.appendChild(li);
+            }
+        }
+
+        // 篩選按鈕事件
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                if (btn.hasAttribute('data-role')) {
+                    const role = btn.getAttribute('data-role');
+                    if (selectedRoles.includes(role)) {
+                        selectedRoles = selectedRoles.filter(r => r !== role);
+                        btn.classList.remove('active');
+                    } else {
+                        selectedRoles.push(role);
+                        btn.classList.add('active');
+                    }
+                } else if (btn.hasAttribute('data-active')) {
+                    if (isActive === 1) {
+                        isActive = -1;
+                        btn.classList.remove('active');
+                    } else {
+                        isActive = 1;
+                        btn.classList.add('active');
+                    }
+                }
+                pageIndex = 1;
+                loadMembers();
+            });
+        });
+
+        // 取消篩選
+        document.getElementById('clearFilterBtn').onclick = function () {
+            selectedRoles = [];
+            isActive = -1;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            pageIndex = 1;
+            loadMembers();
+        };
+
+        // 排序事件
+        document.querySelectorAll('#listTable th[data-sort]').forEach(th => {
+            th.addEventListener('click', function () {
+                const sortField = th.getAttribute('data-sort');
+                if (sortBy === sortField) {
+                    order = order === 0 ? 1 : 0;
+                } else {
+                    sortBy = sortField;
+                    order = 0;
+                }
+                pageIndex = 1;
+                loadMembers();
+            });
+        });
+
+        // 初始載入
+        loadMembers();
+    </script>
+}

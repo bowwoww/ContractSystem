@@ -1,0 +1,50 @@
+﻿#calendar table {
+    table-layout: fixed;
+}
+
+#calendar td {
+    height: 80px;
+    vertical-align: top;
+    padding: 8px;
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    border-radius: 8px;
+}
+
+#calendar td[onclick]:hover {
+    background-color: #e9ecef;
+    transform: scale(1.05);
+}
+
+/* 本次新增日期 */
+#calendar td.day-selected {
+    background-color: #fff3cd !important;
+}
+/* 本次取消日期 */
+#calendar td.day-deleted {
+    background-color: #f8d7da !important;
+    text-decoration: line-through !important;
+}
+
+/* 自己預約的日期 */
+#calendar td.day-booked-self {
+    background-color: #cfe2ff !important; /* 藍色淡色 */
+    color: #084298;
+}
+/* 其他人預約的日期 */
+#calendar td.day-booked-other {
+    background-color: #e2e3e5 !important; /* 淡灰色 */
+    color: #41464b;
+}
+
+/* Bootstrap danger-subtle */
+
+.list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#attendanceChart {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}

@@ -1,0 +1,281 @@
+﻿@{
+    ViewData["Title"] = "個人首頁";
+    //如果是從Login頁面登入進來會收到提醒資訊,將TempData的Json字串轉換為提醒資訊物件
+    var notifityJson = TempData["NotifityList"] as string;
+    var notifities = !string.IsNullOrEmpty(notifityJson)
+        ? Newtonsoft.Json.JsonConvert.DeserializeObject<List<DataModel.DTO.NotifityModel>>(notifityJson)
+        : new List<DataModel.DTO.NotifityModel>();
+    int maxShowCount = 4;
+    DataModel.DTO.NotifityModel notifity1 = new DataModel.DTO.NotifityModel
+    {
+        Title = "提醒訊息",
+        EstimateTime = DateTime.Now,
+        MessageUpper = "由於您的提醒過多，請注意修改<a href='/Home/NotifitySetting'>提醒設定</a>",
+        MessageBottom = "或至<a href='/Home/NotifityList'>提醒清單</a>觀看所有提醒訊息"
+    };
+    //用來判斷是否從Login頁面登入進來
+    var fromLogin = TempData["FromLogin"] as string;
+    // Razor 取得會員ID
+    var memberId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+@section Css {
+    <link rel="stylesheet" href="~/css/homeIndex.css" asp-append-version="true" />
+}
+<div aria-live="polite" aria-atomic="true" class="position-fixed top-50 start-50 translate-middle" id="notifityArea" style="z-index:10">
+    @foreach (var notifity in notifities)
+    {
+        @await Html.PartialAsync("_Notification", notifity)
+    }
+    <!-- 額外的提醒過多提示，預設隱藏，JS 控制顯示 -->
+    <div id="notifityOverflow" style="display:none;">
+        @await Html.PartialAsync("_Notification", notifity1)
+    </div>
+</div>
+<div class="row g-4">
+
+    <div class="col-lg-5">
+        <div class="card h-100 shadow-sm" style="border-radius: 12px;">
+            <div class="card-body text-center d-flex flex-column justify-content-center p-4">
+                <h4 class="card-title mb-3"><i class="bi bi-qr-code-scan me-2"></i>會員 QR Code 簽到</h4>
+                <p class="text-muted">請將此 QR Code 讓工作人員掃描後即可完成簽到</p>
+
+                <div id="qrcode-placeholder">
+                    <i class="bi bi-qr-code" style="font-size: 4rem; color: #adb5bd;"></i>
+                    <span class="text-muted mt-2">QR Code 顯示區</span>
+                </div>
+
+                <div class="mt-3 mb-2">
+                    <select id="contractSelect" class="form-select" style="width:80%;margin:auto;">
+                        <option value="">請選擇合約</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary mt-3 align-self-center" style="width: 80%;" onclick="generateQR()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> 產生新的 QR Code
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <a asp-action="Index" asp-controller="Attendances" asp-route-id="@memberId"  class="feature-card shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-bg bg-primary-subtle text-primary">
+                            <i class="bi bi-calendar-check fs-2"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">課程簽到紀錄</h5>
+                            <p class="card-text text-muted small">檢視近期的課程簽到狀態</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6">
+                <a asp-action="Index" asp-controller="Contracts" asp-route-memberId="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" class="feature-card shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-bg bg-success-subtle text-success">
+                            <i class="bi bi-file-earmark-text fs-2"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">健身合約紀錄</h5>
+                            <p class="card-text text-muted small">查詢您近期的課程合約</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6">
+                <a href="#" class="feature-card shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-bg bg-info-subtle text-info">
+                            <i class="bi bi-clock-history fs-2"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">檢視歷史紀錄</h5>
+                            <p class="card-text text-muted small">操作紀錄</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6">
+                <a asp asp-controller="Members" asp-action="Edit" asp-route-id="@memberId" class="feature-card shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-bg bg-warning-subtle text-warning">
+                            <i class="bi bi-person-circle fs-2"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">修改個人資料</h5>
+                            <p class="card-text text-muted small">更新您的聯絡方式與基本資料</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6">
+                <a asp-controller="Home" asp-action="NotifitySetting" class="feature-card shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-bg bg-danger-subtle text-danger">
+                            <i class="bi bi-bell fs-2"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">修改提醒設定</h5>
+                            <p class="card-text text-muted small">設定課程預約等提醒</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6">
+                <a href="#" class="feature-card shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-bg bg-secondary-subtle text-secondary">
+                            <i class="bi bi-grid fs-2"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">更多功能</h5>
+                            <p class="card-text text-muted small">探索其他系統功能</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        const memberId = '@memberId';
+        var fromLogin = '@fromLogin';
+        if (fromLogin === '1') {
+            // 取得 localStorage 設定
+            const dayNotifity = !isNaN(parseInt(localStorage.getItem('dayNotifity'), 10)) ? parseInt(localStorage.getItem('dayNotifity'), 10) : 2;
+            const birthdayNotifityDays = !isNaN(parseInt(localStorage.getItem('birthdayNotifityDays'), 10)) ? parseInt(localStorage.getItem('birthdayNotifityDays'), 10) : 2;
+            const classExhaustNotifityCount = !isNaN(parseInt(localStorage.getItem('classExhaustNotifityCount'), 10)) ? parseInt(localStorage.getItem('classExhaustNotifityCount'), 10) : 2;
+            // 取得所有提醒 toast 元素
+            const toasts = Array.from(document.querySelectorAll('.toast'));
+            let showCount = 0;
+
+            // 過濾顯示的提醒
+            toasts.forEach(function (toastEl) {
+                const title = toastEl.querySelector('.me-auto').textContent.trim();
+                const estimateTime = toastEl.getAttribute('data-estimatetime');
+                let show = false;
+                const remainClass = parseInt(toastEl.getAttribute('data-value'), 10) || 0;
+
+                if (title === "預約提醒") {
+                    // 預約提醒根據 dayNotifity
+                    if (dayNotifity > 0) {
+                        const bookTime = new Date(estimateTime);
+                        const now = new Date();
+                        const timeDiff = bookTime - now;
+                        const totalmsPerDay = 24 * 60 * 60 * 1000;
+                        const timeNotifity = dayNotifity * totalmsPerDay;
+                        if (timeDiff <= timeNotifity && timeDiff >= 0) show = true;
+                    }
+                } else if (title === "學生生日提醒") {
+                    // 生日提醒根據 birthdayNotifityDays
+                    if (birthdayNotifityDays > 0) {
+                        const birthdayTime = new Date(estimateTime);
+                        const now = new Date();
+                        const timeDiff = birthdayTime - now;
+                        const totalmsPerDay = 24 * 60 * 60 * 1000;
+                        const timeNotifity = birthdayNotifityDays * totalmsPerDay;
+                        // 包含今天生日
+                        if (timeDiff <= timeNotifity && timeDiff > -totalmsPerDay) show = true;
+                    }
+                } else if (title === "課程堂數提醒") {
+                    // 課程堂數提醒根據 classExhaustNotifityCount
+                    if (classExhaustNotifityCount >= remainClass) {
+                        // 這類提醒 EstimateTime 通常是 DateTime.Now，直接顯示
+                        show = true;
+                    }
+                } else {
+                    // 其他提醒一律顯示
+                    show = true;
+                }
+
+                if (show && showCount < @maxShowCount) {
+                    new bootstrap.Toast(toastEl).show();
+                } else {
+                    toastEl.style.display = "none";
+                }
+                if (show) showCount++;
+            });
+             // 更新徽章數字
+            document.getElementById('notifityBadge').textContent = showCount - 1;
+
+            localStorage.setItem('notifityBadgeCount', showCount - 1);
+
+
+            // 超過4個提醒時顯示提醒過多提示
+            if (showCount > 4) {
+                const overflowDiv = document.getElementById('notifityOverflow');
+                overflowDiv.style.display = "";
+                const overflowToast = overflowDiv.querySelector('.toast');
+                overflowToast.classList.remove('hide');
+                overflowToast.style.display = "";
+                new bootstrap.Toast(overflowToast).show();
+            }
+
+            
+        }
+
+        function generateQR() {
+            const placeholder = document.getElementById('qrcode-placeholder');
+            const select = document.getElementById('contractSelect');
+            const contractId = select.value;
+
+            if (!contractId) {
+                placeholder.innerHTML = '<span class="text-danger">請先選擇合約</span>';
+                return;
+            }
+
+            placeholder.innerHTML = '<span class="text-muted mt-2">產生中...</span>';
+
+            $.ajax({
+                url: `/Attendances/GenerateQr?contractId=${contractId}`,
+                type: 'GET',
+                xhrFields: { responseType: 'blob' },
+                success: function (data) {
+                    const url = URL.createObjectURL(data);
+                    placeholder.innerHTML = `<img src="${url}" alt="QR Code" style="max-width:100%;height:auto;" />`;
+                },
+                error: function () {
+                    placeholder.innerHTML = '<span class="text-danger">產生 QR Code 失敗</span>';
+                }
+            });
+        }
+
+        function loadContracts() {
+            const select = document.getElementById('contractSelect');
+            select.innerHTML = '<option value="">載入中...</option>';
+            $.ajax({
+                url: `/api/ContractsApi/contracts/${memberId}`,
+                type: 'GET',
+                success: function (data) {
+                    select.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        select.innerHTML = '<option value="">查無合約</option>';
+                        return;
+                    }
+                    data.forEach(c => {
+                        const text = `${c.trainingClassName} (${c.attendancedClass}/${c.totalClass})`;
+                        select.innerHTML += `<option value="${c.contractID}">${text}</option>`;
+                    });
+                },
+                error: function () {
+                    select.innerHTML = '<option value="">合約載入失敗</option>';
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            loadContracts();
+        });
+    </script>
+}

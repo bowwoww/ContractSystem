@@ -1,0 +1,149 @@
+﻿@model DataModel.Member
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card shadow-sm" style="border-radius: 12px; border: none;">
+
+                <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2 text-primary"></i>
+                        編輯會員資料
+                    </h4>
+                    <a asp-action="Index" asp-controller="Home" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> 返回列表
+                    </a>
+                </div>
+
+                <form asp-action="Edit">
+                    <div class="card-body p-4">
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (TempData["Response"] != null)
+                        {
+                            <div class="alert alert-info">
+                                @TempData["Response"]
+                            </div>
+                        }
+                        
+
+                        <input type="hidden" asp-for="MemberID" />
+
+                        <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label asp-for="MemberID" class="form-label fw-bold"></label>
+                            <input asp-for="MemberID" class="form-control" readonly />
+                            <span asp-validation-for="MemberID" class="text-danger small"></span>
+                        </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MemberName" class="form-label fw-bold"></label>
+                                <input asp-for="MemberName" class="form-control" />
+                                <span asp-validation-for="MemberName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MemberTel" class="form-label fw-bold"></label>
+                                <input asp-for="MemberTel" class="form-control" />
+                                <span asp-validation-for="MemberTel" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="LineID" class="form-label fw-bold"></label>
+                                <input asp-for="LineID" class="form-control" />
+                                <span asp-validation-for="LineID" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label asp-for="MemberAddress" class="form-label fw-bold"></label>
+                                <input asp-for="MemberAddress" class="form-control" />
+                                <span asp-validation-for="MemberAddress" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MemberBirthday" class="form-label fw-bold"></label>
+                                <input class="form-control" value="@Model.MemberBirthday?.ToShortDateString()" readonly />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">性別</label>
+                                <input class="form-control" value="@(Model.MemberGender ? "男" : "女")" readonly />
+                            </div>
+
+                            <div class="col-md-12">
+                                <label asp-for="MemberRemark" class="form-label fw-bold"></label>
+                                <textarea asp-for="MemberRemark" class="form-control" rows="3" placeholder="(備註)"></textarea>
+                                <span asp-validation-for="MemberRemark" class="text-danger small"></span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-light text-end p-3" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                        @if (User.IsInRole("C"))
+                        {
+                            <button type="submit"
+                                    class="btn @(Model.IsActive ? "btn-success" : "btn-secondary") me-2"
+                                    formaction="@Url.Action("SetActiveStatus", "Members")"
+                                    formmethod="post"
+                                    name="memberId"
+                                    value="@Model.MemberID">
+                                <i class="bi bi-person-check me-1"></i> 啟用
+                            </button>
+                            <a asp-controller="Contracts" asp-action="Index" asp-route-memberId="@Model.MemberID" class="btn btn-info me-2">
+                                <i class="bi bi-file-earmark-text me-1"></i> 查看合約
+                            </a>
+                            <button type="submit" class="btn btn-danger me-2"
+                                    formaction="@Url.Action("ResetDefaultPassword", "Members")"
+                                    formmethod="post">
+                                <i class="bi bi-key me-1"></i> 重設為預設密碼
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-warning me-2" id="changePwdBtn">
+                                <i class="bi bi-shield-lock me-1"></i> 修改密碼
+                            </button>
+                        }
+                        <button type="submit" value="Save" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> 儲存變更
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+@await Component.InvokeAsync("ChangePassword", new { memberId = Model.MemberID })
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // 顯示密碼修改 modal
+        var changePwdModalEl = document.getElementById('changePwdModal');
+        var changePwdModal = changePwdModalEl ? new bootstrap.Modal(changePwdModalEl) : null;
+
+        // 顯示 modal
+        document.getElementById('changePwdBtn').onclick = function () {
+            if (changePwdModal) {
+                changePwdModal.show();
+            }
+        };
+
+        // 關閉 modal（取消按鈕）
+        var cancelBtn = document.getElementById('cancelPwdBtn');
+        if (cancelBtn && changePwdModal) {
+            cancelBtn.onclick = function () {
+                changePwdModal.hide();
+            };
+        }
+    </script>
+}

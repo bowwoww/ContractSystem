@@ -1,0 +1,94 @@
+﻿@model List<DataModel.DTO.NotifityModel>
+
+@{
+    // 取得所有不重複的 Title
+    var titles = Model?.Select(x => x.Title).Distinct().ToList() ?? new List<string>();
+    bool noNotifity = Model == null || Model.Count == 0;
+}
+@if (noNotifity)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height:60vh;">
+        <div class="text-center text-muted fs-4">
+            您沒有任何提醒訊息
+        </div>
+    </div>
+}
+else
+{
+    <div class="container mb-3">
+        <div id="filter-buttons" class="d-flex flex-wrap gap-2">
+            @foreach (var title in titles)
+            {
+                <button type="button" class="btn btn-outline-info filter-btn" data-title="@title">@title</button>
+            }
+        </div>
+    </div>
+
+    <div class="container" id="notifity-cards" style="height:70vh; overflow-y:auto;">
+        @foreach (var item in Model)
+        {
+            <div class="card mb-2 notifity-card" data-title="@item.Title" data-value="@item.NotifyValue" data-estimatetime="@item.EstimateTime.ToString("yyyy-MM-ddTHH:mm:ss")">
+                <div class="card-header">
+                    @item.Title
+                </div>
+                <div class="card-body">
+                    <span class="card-text">@item.MessageUpper ，</span>
+                    <span class="card-text">@item.MessageBottom</span>
+                </div>
+            </div>
+        }
+    </div>
+}
+@section Scripts {
+    <script>
+        // 儲存目前選中的 title
+        let selectedTitles = [];
+
+        function updateButtonStyles() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (selectedTitles.includes(btn.dataset.title)) {
+                    btn.classList.add('btn-primary');
+                } else {
+                    btn.classList.remove('btn-primary');
+                }
+            });
+        }
+
+        function filterCards() {
+            var cards = document.querySelectorAll('.notifity-card');
+            if (selectedTitles.length === 0) {
+                cards.forEach(card => {
+                    card.style.display = '';
+                    card.classList.remove('border-primary');
+                });
+            } else {
+                cards.forEach(card => {
+                    if (selectedTitles.includes(card.dataset.title)) {
+                        card.style.display = '';
+                        card.classList.add('border', 'border-primary');
+                    } else {
+                        card.style.display = 'none';
+                        card.classList.remove('border', 'border-primary');
+                    }
+                });
+            }
+            updateButtonStyles();
+        }
+
+        // 綁定事件
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const title = this.dataset.title;
+                if (selectedTitles.includes(title)) {
+                    selectedTitles = selectedTitles.filter(t => t !== title);
+                } else {
+                    selectedTitles.push(title);
+                }
+                filterCards();
+            });
+        });
+
+        // 頁面載入時執行一次
+        filterCards();
+    </script>
+}

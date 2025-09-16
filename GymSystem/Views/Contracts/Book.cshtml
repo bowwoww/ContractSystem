@@ -1,0 +1,304 @@
+﻿@model IEnumerable<DataModel.TrainingDate>
+
+@{
+    ViewData["Title"] = "課程行事曆預約";
+    var existingDatesWithMember = Model.Select(d => new
+    {
+        Date = d.ClassDate.ToString("yyyy-MM-dd HH:mm"),
+        MemberId = d.TrainerID
+    }).ToList();
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+@section Css {
+    <link rel="stylesheet" href="~/css/book.css" asp-append-version="true" />
+}
+
+<div class="card shadow-sm" style="border-radius: 12px; border: none;">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+        <h4 class="mb-0">
+            <i class="bi bi-calendar-plus-fill me-2 text-primary"></i>
+            課程行事曆預約
+        </h4>
+        <a asp-action="Details" asp-route-id="@ViewData["ContractID"]" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> 返回合約
+        </a>
+    </div>
+
+    <div class="card-body p-4">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <label class="form-label mb-0 fw-bold">選擇年月：</label>
+                    <select id="yearSelect" class="form-select w-auto"></select>
+                    <select id="monthSelect" class="form-select w-auto"></select>
+                </div>
+                <div id="calendar"></div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="h-100 d-flex flex-column">
+                    <div>
+                        <h5 class="fw-bold"><i class="bi bi-check-circle-fill text-success me-2"></i>本次新增預約</h5>
+                        <ul id="selectedList" class="list-group mb-4">
+                        </ul>
+
+                        <h5 class="fw-bold"><i class="bi bi-x-circle-fill text-danger me-2"></i>本次取消預約</h5>
+                        <ul id="deletedList" class="list-group mb-4">
+                        </ul>
+                    </div>
+
+                    <form id="updateForm" method="post" asp-action="UpdateTrainingDates" class="mt-auto">
+                        <input type="hidden" id="selectedDates" name="selectedDates" />
+                        <input type="hidden" id="deletedDates" name="deletedDates" />
+                        <input type="hidden" id="contractId" name="contractId" value="@ViewData["ContractID"]" />
+                        <input type="hidden" id="trainerId" name="trainerId" value="@currentUserId"/>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="bi bi-save me-1"></i> 確認並更新預約
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="timePickerModal" tabindex="-1" aria-labelledby="timePickerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="timePickerModalLabel">選擇時間 for <span id="modalDate" class="fw-bold"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-center align-items-center gap-2">
+                    <select id="hourSelect" class="form-select"></select> <span class="fs-4">:</span>
+                    <select id="minuteSelect" class="form-select"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" id="confirmTimeBtn" class="btn btn-primary">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">確認取消預約</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要取消 <strong id="deleteModalDate"></strong> 的預約嗎？</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">確定取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const existingDatesWithMember = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(existingDatesWithMember));
+        const currentUserId = '@currentUserId';
+
+        // 初始化 Bootstrap Modals
+        const timePickerModal = new bootstrap.Modal(document.getElementById('timePickerModal'));
+        const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+
+        // 初始化年月選單 (邏輯不變)
+        const now = new Date();
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        for (let y = now.getFullYear(); y <= now.getFullYear() + 1; y++) {
+            yearSelect.add(new Option(y, y));
+        }
+        for (let m = 1; m <= 12; m++) {
+            monthSelect.add(new Option(m, m));
+        }
+        yearSelect.value = now.getFullYear();
+        monthSelect.value = now.getMonth() + 1;
+
+        // 已有的預約日期
+        let selectedDates = []; // 本次新增的 { date, hour, minute }
+        let deletedDates = [];  // 本次刪除的 "yyyy-MM-dd HH:mm"
+
+        // 取得今天日期字串（yyyy-MM-dd）
+        function getTodayStr() {
+            const today = new Date();
+            return today.toISOString().slice(0, 10);
+        }
+        const todayStr = getTodayStr();
+
+        function renderCalendar() {
+            const year = parseInt(yearSelect.value);
+            const month = parseInt(monthSelect.value);
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            let html = '<table class="table table-bordered text-center"><thead><tr>';
+            ['日', '一', '二', '三', '四', '五', '六'].forEach(d => html += `<th>${d}</th>`);
+            html += '</tr></thead><tbody><tr>';
+
+            for (let i = 0; i < firstDay.getDay(); i++) html += '<td></td>';
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                let cellClass = '';
+                let fullDateStr = null;
+
+                // 找出該日期的預約物件
+                const existObj = existingDatesWithMember.find(d => d.Date.startsWith(dateStr));
+                const exist = existObj ? existObj.Date : null;
+                const bookedMemberId = existObj ? existObj.MemberId : null;
+                const isDeleted = exist && deletedDates.includes(exist);
+
+                // 判斷是否為今天以前
+                const isPast = dateStr < todayStr;
+
+                if (!isPast) {
+                    if (isDeleted) {
+                        cellClass = 'day-deleted';
+                        fullDateStr = exist;
+                    } else if (exist) {
+                        // 根據 MemberID 決定顏色
+                        if (bookedMemberId === currentUserId) {
+                            cellClass = 'day-booked-self';
+                        } else {
+                            cellClass = 'day-booked-other';
+                        }
+                        fullDateStr = exist;
+                    } else if (selectedDates.some(d => d.date === dateStr)) {
+                        cellClass = 'day-selected';
+                    }
+                }
+
+                if (isPast) {
+                    html += `<td style="color:#ccc;cursor:not-allowed;">${day}</td>`;
+                } else {
+                    html += `<td class="${cellClass}" onclick="handleDateClick('${dateStr}', ${fullDateStr ? `'${fullDateStr}'` : 'null'})">${day}</td>`;
+                }
+                if ((firstDay.getDay() + day) % 7 === 0) html += '</tr><tr>';
+            }
+            html += '</tr></tbody></table>';
+            document.getElementById('calendar').innerHTML = html;
+        }
+
+        // 時間選擇器初始化 (邏輯不變)
+        const hourSelect = document.getElementById('hourSelect');
+        const minuteSelect = document.getElementById('minuteSelect');
+        for (let h = 9; h <= 21; h++) { hourSelect.add(new Option(String(h).padStart(2, '0'), h)); }
+        for (let m = 0; m < 60; m += 10) { minuteSelect.add(new Option(String(m).padStart(2, '0'), m)); }
+
+        let currentPickDate = null;
+        let currentDeleteDate = null;
+
+        function handleDateClick(dateStr, fullDateStr) {
+            // 禁止選擇昨天以前的日期
+            if (dateStr < todayStr) return;
+
+            if (fullDateStr) { // 點擊已有預約的日期
+                // 取得該預約的教練ID
+                const existObj = existingDatesWithMember.find(d => d.Date === fullDateStr);
+                const bookedTrainerId = existObj ? existObj.MemberId : null;
+
+                // 只有同一教練才能刪除
+                if (bookedTrainerId !== currentUserId) {
+                    return;
+                }
+
+                if (deletedDates.includes(fullDateStr)) {
+                    undoDelete(fullDateStr); // 如果已在刪除列表，則恢復
+                } else {
+                    currentDeleteDate = fullDateStr;
+                    document.getElementById('deleteModalDate').innerText = fullDateStr;
+                    deleteConfirmModal.show(); // **使用 Bootstrap Modal API**
+                }
+            } else { // 點擊空白或本次已選日期
+                if (selectedDates.some(d => d.date === dateStr)) {
+                    removeSelected(dateStr); // 如果是本次已選，則移除
+                } else {
+                    currentPickDate = dateStr;
+                    document.getElementById('modalDate').innerText = dateStr;
+                    timePickerModal.show(); // **使用 Bootstrap Modal API**
+                }
+            }
+        }
+
+        // --- Modal 按鈕事件 ---
+        document.getElementById('confirmTimeBtn').onclick = function() {
+            const hour = String(hourSelect.value).padStart(2, '0');
+            const minute = String(minuteSelect.value).padStart(2, '0');
+            selectedDates.push({ date: currentPickDate, hour: hour, minute: minute });
+            timePickerModal.hide(); // **使用 Bootstrap Modal API**
+            renderAll();
+        };
+
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            if (currentDeleteDate) {
+                deletedDates.push(currentDeleteDate);
+                currentDeleteDate = null;
+                deleteConfirmModal.hide(); // **使用 Bootstrap Modal API**
+                renderAll();
+            }
+        };
+
+        // --- 列表渲染與操作 ---
+        function renderSelectedList() {
+            const ul = document.getElementById('selectedList');
+            ul.innerHTML = '';
+            selectedDates.forEach(d => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.innerHTML = `<span>${d.date} ${d.hour}:${d.minute}</span>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSelected('${d.date}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>`;
+                ul.appendChild(li);
+            });
+        }
+        function removeSelected(dateStr) {
+            selectedDates = selectedDates.filter(d => d.date !== dateStr);
+            renderAll();
+        }
+
+        function renderDeletedList() {
+            const ul = document.getElementById('deletedList');
+            ul.innerHTML = '';
+            deletedDates.forEach(d => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.innerHTML = `<span>${d}</span>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="undoDelete('${d}')">
+                                    <i class="bi bi-arrow-counterclockwise"></i> 復原
+                                </button>`;
+                ul.appendChild(li);
+            });
+        }
+        function undoDelete(dateStr) {
+            deletedDates = deletedDates.filter(d => d !== dateStr);
+            renderAll();
+        }
+
+        function renderAll() {
+            renderCalendar();
+            renderSelectedList();
+            renderDeletedList();
+        }
+
+        yearSelect.onchange = monthSelect.onchange = renderAll;
+        renderAll();
+
+        // 更新表單隱藏欄位 (邏輯不變)
+        document.getElementById('updateForm').onsubmit = function() {
+            const result = selectedDates.map(d => `${d.date} ${d.hour}:${d.minute}`);
+            document.getElementById('selectedDates').value = JSON.stringify(result);
+
+            document.getElementById('deletedDates').value = JSON.stringify(deletedDates);
+        };
+    </script>
+}

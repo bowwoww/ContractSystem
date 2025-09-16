@@ -1,0 +1,144 @@
+﻿@model DataModel.Contract
+
+@{
+    ViewData["Title"] = "合約詳細資料";
+
+    // --- 這段 C# 邏輯區塊完整保留 ---
+    string endDate = ViewData["endDate"] is DateTime dt ? dt.ToShortDateString() : string.Empty;
+    int addClassCount = ViewData["addClassCount"] as int? ?? 0;
+    int transferClassCount = ViewData["TransferClassCount"] as int? ?? 0;
+    var classLength = ViewData["classLength"] as int? ?? 0;
+    int usedClassCount = ViewData["attendancedClass"] as int? ?? 0;
+    int totalClassCount = classLength + addClassCount - transferClassCount;
+    bool isFull = false;
+    if (usedClassCount == totalClassCount)
+        isFull = true;
+    // --- 邏輯區塊結束 ---
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+        <div class="card shadow-sm" style="border-radius: 12px; border: none;">
+
+            <div class="card-header bg-light d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 1.25rem;">
+                <h4 class="mb-0">
+                    <i class="bi bi-file-text-fill me-2 text-primary"></i>
+                    合約詳細資料
+                </h4>
+                <a asp-action="Index" asp-route-memberId="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> 返回列表
+                </a>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <h5 class="fw-bold">課程進度</h5>
+                    @{
+                        // 計算進度百分比，避免除以零的錯誤
+                        var progressPercentage = totalClassCount > 0 ? (double)usedClassCount / totalClassCount * 100 : 0;
+                    }
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar" role="progressbar" style="width: @progressPercentage%;" aria-valuenow="@usedClassCount" aria-valuemin="0" aria-valuemax="@totalClassCount">
+                            @($"{progressPercentage:F0}%")
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1 text-muted">
+                        <span>已使用 @usedClassCount 堂</span>
+                        <span>
+                            總計 @totalClassCount 堂
+                        </span>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row g-3">
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.ClassTypeID)</div>
+                    <div class="col-9">
+                        @Html.DisplayFor(model => model.TrainingClass.ClassName)
+                        <span id="addClassCount" class="ms-2 text-danger fw-bold"></span>
+                        <span id="transferClassCount" class="ms-2 text-info fw-bold"></span>
+                    </div>
+
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.SignDate)</div>
+                    <div class="col-9">@Model.SignDate.ToShortDateString()</div>
+
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.EndDate)</div>
+                    <div class="col-9">
+                        <span>@Model.EndDate.ToShortDateString()</span>
+                        <span id="newEndDate" class="ms-2 text-danger fw-bold"></span>
+                    </div>
+
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.PayTypeID)</div>
+                    <div class="col-9">@Html.DisplayFor(model => model.PayType.PayTypeName)</div>
+
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.MemberID)</div>
+                    <div class="col-9">@Html.DisplayFor(model => model.Member.MemberName) (@Html.DisplayFor(model => model.Member.MemberID))</div>
+
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.Signer)</div>
+                    <div class="col-9">@Html.DisplayFor(model => model.Signer)</div>
+
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.HandlerID)</div>
+                    <div class="col-9">@Html.DisplayFor(model => model.Handler.MemberName) (@Html.DisplayFor(model => model.Handler.MemberID))</div>
+
+                    <div class="col-3 fw-bold text-muted">@Html.DisplayNameFor(model => model.TrainerID)</div>
+                    <div class="col-9">@Html.DisplayFor(model => model.Trainer.MemberName) (@Html.DisplayFor(model => model.Trainer.MemberID))</div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-light text-end p-3">
+                @if (User.IsInRole("C"))
+                {
+                    <a asp-controller="ContractEdits" asp-action="Create" asp-route-contractId="@Model.ContractID" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-1"></i> 合約異動
+                    </a>
+                    <a asp-controller="Attendances" asp-action="Create" asp-route-contractId="@Model.ContractID"
+                       class="btn btn-primary ms-2 @(isFull ? "disabled" : "")"
+                       tabindex="@(isFull ? "-1" : "0")" aria-disabled="@(isFull ? "true" : "false")">
+                        <i class="bi bi-check2-square me-1"></i> 手動簽到
+                    </a>
+                }
+                @if (User.IsInRole("B"))
+                {
+                    <a asp-action="Book" asp-route-contractId="@Model?.ContractID" 
+                        class="btn btn-success ms-2 @(isFull ? "disabled" : "")"
+                       tabindex="@(isFull ? "-1" : "0")" aria-disabled="@(isFull ? "true" : "false")">
+                        <i class="bi bi-calendar-plus me-1"></i> 預約課程
+                    </a>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // --- 這段 JavaScript 腳本完整保留 ---
+        var endDate = '@endDate';
+        var addClassCount = '@addClassCount';
+        var transferClassCount = '@transferClassCount';
+
+        $(document).ready(function () {
+            // 顯示異動後的結束日期
+            if (endDate) {
+                $('#newEndDate').prev('span').css('text-decoration', 'line-through');
+                $('#newEndDate').text('-> ' + endDate); // 加上箭頭更清晰
+                $('#newEndDate').show();
+            }
+            // 顯示加購堂數
+            if (addClassCount && addClassCount != '0') {
+                var classText = `(+${addClassCount}堂)`;
+                $('#addClassCount').text(classText);
+                $('#addClassCount').show();
+            }
+            // 顯示轉讓堂數
+            if (transferClassCount && transferClassCount != '0') {
+                var transferText = `(-${transferClassCount}堂)`;
+                $('#transferClassCount').text(transferText);
+                $('#transferClassCount').show();
+            }
+        });
+        // --- 腳本結束 ---
+    </script>
+}

@@ -1,0 +1,43 @@
+﻿
+/* QR Code 預留區域樣式 */
+#qrcode-placeholder {
+    width: 250px;
+    height: 250px;
+    background-color: #e9ecef;
+    border: 2px dashed #ced4da;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin: 1.5rem auto; /* 上下邊距，並水平置中 */
+    border-radius: 8px;
+}
+
+/* 功能卡片樣式 */
+.feature-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    text-decoration: none;
+    color: inherit;
+    display: block; /* 讓 <a> 標籤表現得像 div */
+    border-radius: 12px;
+    border: none;
+}
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-card .card-body {
+        display: flex;
+        align-items: center;
+    }
+
+    .feature-card .icon-bg {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-right: 1.5rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
