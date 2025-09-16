@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using DataModel;
+using DataModel.DTO;
+using DataModel.Security;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using DataModel;
-using Microsoft.AspNetCore.Identity;
-using DataModel.Security;
-using DataModel.DTO;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace GymSystem.Controllers
 {
@@ -192,6 +193,9 @@ namespace GymSystem.Controllers
         [Authorize(Roles ="C")]
         public async Task<IActionResult> SetActiveStatus(string memberId)
         {
+            var loginMemberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (memberId == loginMemberId)
+            { return RedirectToAction("Error", "Home", new { errorMessage = "請不要關閉自己的權限" }); }
             Member member = await _context.Members.FindAsync(memberId);
             if (member == null) {
                 return RedirectToAction("Error", "Home", new { errorMessage = "未找到會員" });
