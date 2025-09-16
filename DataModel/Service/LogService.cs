@@ -33,7 +33,12 @@ namespace DataModel.Service
             }
             var action = $"{context.Request.Method} {context.Request.Path}";
             var device = context.Request.Headers["User-Agent"].ToString();
-            var ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+
+            // 取得 X-Forwarded-For 或 RemoteIpAddress
+            var ipAddress = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (string.IsNullOrEmpty(ipAddress))
+                ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            // 如果有多個 IP，取第一個
             var log = new OperationLog
             {
                 MemberId = memberId,
