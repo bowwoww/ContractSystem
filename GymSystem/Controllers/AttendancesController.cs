@@ -125,7 +125,7 @@ namespace GymSystem.Controllers
             var trainerId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (trainerId == null)
             { return RedirectToAction("Error", "Home", new { errorMessage = "教練不存在或未登入" }); }
-                var trainer = await _context.Members.FirstOrDefaultAsync(m => m.MemberID == trainerId);
+            var trainer = await _context.Members.FirstOrDefaultAsync(m => m.MemberID == trainerId);
             if (trainer == null)
             {
                 return RedirectToAction("Error", "Home", new { errorMessage = "教練不存在或未登入" });
@@ -232,7 +232,7 @@ namespace GymSystem.Controllers
                 _logService.Log(attendance.AttendanceID);  
                 _context.Add(attendance);
                 await _context.SaveChangesAsync();
-                return RedirectToAction("Create","Attendances", new {contractId = attendance.ContractID});
+                return RedirectToAction("Details", "Contracts", new { id = attendance.ContractID });
             }
 
             return RedirectToAction("ShowContracts", "Contracts", new {memberId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value });

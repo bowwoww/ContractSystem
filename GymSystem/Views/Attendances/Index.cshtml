@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "簽到紀錄";
+
+    var role = User.Claims.FirstOrDefault(c => c.Type == "Role")?.Value;
+
     var attendanceDates = Model.Select(a => a.AttendanceDate).ToList();
     var years = attendanceDates.Select(d => d.Year).Distinct().OrderBy(y => y).ToList();
 
